@@ -1,0 +1,67 @@
+export PROJECTNAME=$(shell basename "$(PWD)")
+
+.PHONY: install
+install: ## Install the virtual environment and install the pre-commit hooks
+	@echo "🚀 Creating virtual environment using uv"
+	@uv sync
+	@uv run pre-commit install
+
+start-work: ## Start working on a new feature
+	@echo "🚀 Starting work on a new feature"
+	@mob start -i -b "$(FEATURE)"
+
+.PHONY: check
+check: ## Run code quality tools.
+	@echo "🚀 Checking lock file consistency with 'pyproject.toml'"
+	@uv lock --locked
+	@echo "🚀 Linting code: Running pre-commit"
+	@uv run pre-commit run -a
+	@mob next
+
+.PHONY: upgrade
+upgrade: ## Upgrade all dependencies to their latest versions
+	@echo "🚀 Upgrading all dependencies"
+	@uv lock --upgrade
+
+.PHONY: test
+test: ## Run all unit tests
+	@echo "🚀 Running unit tests"
+	@uv run pytest -v
+
+.PHONY: test-single
+test-single: ## Run a single test file (usage: make test-single TEST=test_config.py)
+	@echo "🚀 Running single test: $(TEST)"
+	@uv run pytest -v tests/$(TEST)
+
+.PHONY: run
+run: ## Run the application
+	@echo "🚀 Testing code: Running $(PROJECTNAME)"
+	@uv run devboost
+
+.PHONY: build
+build: clean-build ## Build wheel file
+	@echo "🚀 Creating wheel file"
+	@uvx --from build pyproject-build --installer uv
+
+.PHONY: clean-build
+clean-build: ## Clean build artifacts
+	@echo "🚀 Removing build artifacts"
+	@uv run python -c "import shutil; import os; shutil.rmtree('dist') if os.path.exists('dist') else None"
+	@uvx pyclean .
+
+.PHONY: context
+context: clean-build ## Build context file from application sources
+	llm-context-builder.py --extensions .py --ignored_dirs build dist generated venv .venv .idea .aider.tags.cache.v3 --print_contents --temp_file
+
+package: clean-build ## Run installer
+	uv run pyinstaller main.spec
+
+install-macosx: package ## Installs application in users Application folder
+	./scripts/install-macosx.sh DevBoost.app
+
+.PHONY: help
+help:
+	@uv run python -c "import re; \
+	[[print(f'\033[36m{m[0]:<20}\033[0m {m[1]}') for m in re.findall(r'^([a-zA-Z_-]+):.*?## (.*)$$', open(makefile).read(), re.M)] for makefile in ('$(MAKEFILE_LIST)').strip().split()]"
+
+.DEFAULT_GOAL := help
