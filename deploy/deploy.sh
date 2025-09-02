@@ -186,7 +186,7 @@ server {
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto \$scheme;
-        
+
         # Timeouts
         proxy_connect_timeout 30s;
         proxy_send_timeout 30s;
@@ -200,7 +200,7 @@ server {
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto \$scheme;
-        
+
         # Timeouts
         proxy_connect_timeout 30s;
         proxy_send_timeout 30s;
@@ -218,15 +218,15 @@ server {
 # server {
 #     listen 443 ssl http2;
 #     server_name _;
-#     
+#
 #     ssl_certificate /path/to/your/cert.pem;
 #     ssl_certificate_key /path/to/your/key.pem;
-#     
+#
 #     # SSL configuration
 #     ssl_protocols TLSv1.2 TLSv1.3;
 #     ssl_ciphers HIGH:!aNULL:!MD5;
 #     ssl_prefer_server_ciphers on;
-#     
+#
 #     # Include the same location blocks as above
 # }
 EOF

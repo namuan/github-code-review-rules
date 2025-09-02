@@ -4,25 +4,17 @@ module.exports = {
     es2021: true,
     node: true,
   },
-  extends: [
-    'eslint:recommended',
-  ],
-  parser: '@typescript-eslint/parser',
+  extends: ["eslint:recommended"],
+  parser: "@typescript-eslint/parser",
   parserOptions: {
-    ecmaVersion: 'latest',
-    sourceType: 'module',
+    ecmaVersion: "latest",
+    sourceType: "module",
   },
-  plugins: [
-    '@typescript-eslint',
-  ],
+  plugins: ["@typescript-eslint"],
   rules: {
     // Add custom rules here
-    'no-unused-vars': 'warn',
-    'no-console': 'off',
+    "no-unused-vars": "warn",
+    "no-console": "off",
   },
-  ignorePatterns: [
-    'node_modules/',
-    'dist/',
-    'build/',
-  ],
+  ignorePatterns: ["node_modules/", "dist/", "build/"],
 };

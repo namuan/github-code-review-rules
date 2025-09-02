@@ -1,6 +1,4 @@
-"""
-Web UI routes and templates
-"""
+"""Web UI routes and templates."""
 
 from fastapi import APIRouter
 

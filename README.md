@@ -88,17 +88,20 @@ SUM:                            48           1992           1653           8371
 ### Quick Start
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/yourusername/github-pr-rules-analyzer.git
    cd github-pr-rules-analyzer
    ```
 
 2. **Install dependencies**
+
    ```bash
    pip install -r requirements.txt
    ```
 
 3. **Set environment variables**
+
    ```bash
    export GITHUB_TOKEN=your_github_token
    export LLM_API_KEY=your_openai_api_key
@@ -106,6 +109,7 @@ SUM:                            48           1992           1653           8371
    ```
 
 4. **Run the application**
+
    ```bash
    python main.py
    ```
@@ -116,6 +120,7 @@ SUM:                            48           1992           1653           8371
 ### Docker Deployment
 
 1. **Build and run with Docker Compose**
+
    ```bash
    docker-compose up -d
    ```
@@ -136,26 +141,27 @@ sudo ./deploy/deploy.sh
 
 ### Environment Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `DEBUG` | Debug mode | `False` |
-| `HOST` | Host address | `0.0.0.0` |
-| `PORT` | Port number | `8000` |
-| `DATABASE_URL` | Database connection | `sqlite:///app.db` |
-| `GITHUB_TOKEN` | GitHub API token | Required |
-| `GITHUB_API_BASE_URL` | GitHub API base URL | `https://api.github.com` |
-| `LLM_API_KEY` | LLM service API key | Required |
-| `LLM_API_BASE_URL` | LLM API base URL | `https://api.openai.com/v1` |
-| `LLM_MODEL` | LLM model to use | `gpt-4` |
-| `LLM_MAX_TOKENS` | Maximum tokens for LLM | `1000` |
-| `LLM_TEMPERATURE` | LLM temperature | `0.3` |
-| `SECRET_KEY` | Secret key for sessions | Auto-generated |
-| `LOG_LEVEL` | Logging level | `INFO` |
-| `LOG_FILE` | Log file path | `logs/app.log` |
+| Variable              | Description             | Default                     |
+| --------------------- | ----------------------- | --------------------------- |
+| `DEBUG`               | Debug mode              | `False`                     |
+| `HOST`                | Host address            | `0.0.0.0`                   |
+| `PORT`                | Port number             | `8000`                      |
+| `DATABASE_URL`        | Database connection     | `sqlite:///app.db`          |
+| `GITHUB_TOKEN`        | GitHub API token        | Required                    |
+| `GITHUB_API_BASE_URL` | GitHub API base URL     | `https://api.github.com`    |
+| `LLM_API_KEY`         | LLM service API key     | Required                    |
+| `LLM_API_BASE_URL`    | LLM API base URL        | `https://api.openai.com/v1` |
+| `LLM_MODEL`           | LLM model to use        | `gpt-4`                     |
+| `LLM_MAX_TOKENS`      | Maximum tokens for LLM  | `1000`                      |
+| `LLM_TEMPERATURE`     | LLM temperature         | `0.3`                       |
+| `SECRET_KEY`          | Secret key for sessions | Auto-generated              |
+| `LOG_LEVEL`           | Logging level           | `INFO`                      |
+| `LOG_FILE`            | Log file path           | `logs/app.log`              |
 
 ### GitHub API Setup
 
 1. Create a GitHub Personal Access Token:
+
    - Go to GitHub Settings → Developer Settings → Personal Access Tokens
    - Generate a token with `repo` scope
 
@@ -167,6 +173,7 @@ sudo ./deploy/deploy.sh
 ### LLM Service Setup
 
 1. Get an API key from your preferred LLM provider:
+
    - OpenAI: https://platform.openai.com/api-keys
    - Anthropic: https://console.anthropic.com/
    - Other compatible providers
@@ -274,6 +281,7 @@ docker-compose down
 ### Production Deployment
 
 The deployment script handles:
+
 - System service setup
 - Nginx configuration
 - Environment setup
@@ -301,15 +309,15 @@ Once the application is running, you can access the interactive API documentatio
 
 ### Key API Endpoints
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/v1/health` | GET | Health check |
-| `/api/v1/dashboard` | GET | Dashboard data |
-| `/api/v1/repositories` | GET/POST | Repository management |
-| `/api/v1/rules` | GET | List rules |
-| `/api/v1/rules/search` | GET | Search rules |
-| `/api/v1/rules/extract` | POST | Extract rules |
-| `/api/v1/sync` | POST | Start sync |
+| Endpoint                | Method   | Description           |
+| ----------------------- | -------- | --------------------- |
+| `/api/v1/health`        | GET      | Health check          |
+| `/api/v1/dashboard`     | GET      | Dashboard data        |
+| `/api/v1/repositories`  | GET/POST | Repository management |
+| `/api/v1/rules`         | GET      | List rules            |
+| `/api/v1/rules/search`  | GET      | Search rules          |
+| `/api/v1/rules/extract` | POST     | Extract rules         |
+| `/api/v1/sync`          | POST     | Start sync            |
 
 ## 📈 Monitoring
 
@@ -328,6 +336,7 @@ Once the application is running, you can access the interactive API documentatio
 ### Alerting
 
 Configure alerts for:
+
 - High error rates
 - Slow response times
 - Service unavailability

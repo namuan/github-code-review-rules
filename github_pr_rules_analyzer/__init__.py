@@ -1,7 +1,6 @@
-"""
-GitHub PR Rules Analyzer
+"""GitHub PR Rules Analyzer.
 
-A system that collects, processes, and analyzes GitHub pull request comments 
+A system that collects, processes, and analyzes GitHub pull request comments
 to generate coding rules for improved code quality and standards enforcement.
 """
 

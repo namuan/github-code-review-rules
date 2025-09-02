@@ -1,6 +1,4 @@
-"""
-API routes and endpoints
-"""
+"""API routes and endpoints."""
 
 from fastapi import APIRouter
 
