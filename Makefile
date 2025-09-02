@@ -18,6 +18,9 @@ check: ## Run code quality tools.
 	@uv run pre-commit run -a
 	@mob next
 
+check-tool: ## Manually run a single pre-commit hook
+	@uv run pre-commit run $(TOOL) --all-files
+
 .PHONY: upgrade
 upgrade: ## Upgrade all dependencies to their latest versions
 	@echo "🚀 Upgrading all dependencies"
