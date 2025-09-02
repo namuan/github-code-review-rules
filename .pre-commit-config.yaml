@@ -43,3 +43,31 @@ repos:
     rev: "v3.0.3"
     hooks:
       - id: prettier
+
+  - repo: https://github.com/pre-commit/mirrors-eslint
+    rev: v8.57.0
+    hooks:
+      - id: eslint
+        files: \.(js|jsx|ts|tsx)$
+        types: [file]
+        additional_dependencies:
+          - eslint@^8.0.0
+          - "@typescript-eslint/parser@^6.0.0"
+          - "@typescript-eslint/eslint-plugin@^6.0.0"
+
+  - repo: https://github.com/pre-commit/mirrors-stylelint
+    rev: v15.10.3
+    hooks:
+      - id: stylelint
+        files: \.(css|scss|sass|less)$
+        types: [file]
+        additional_dependencies:
+          - stylelint@^15.0.0
+          - stylelint-config-standard@^34.0.0
+
+  - repo: https://github.com/pre-commit/mirrors-htmlhint
+    rev: v1.1.4
+    hooks:
+      - id: htmlhint
+        files: \.(html|htm)$
+        types: [file]

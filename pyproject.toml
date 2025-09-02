@@ -1,10 +1,10 @@
 [project]
-name = "devboost"
-version = "0.0.1"
-description = "Tools to boost developer productivity and improve workflows"
-authors = [{ name = "Namuan", email = "namuan@deskriders.dev" }]
+name = "github-pr-rules-analyzer"
+version = "1.0.0"
+description = "A system that collects, processes, and analyzes GitHub pull request comments to generate coding rules"
+authors = [{ name = "Development Team", email = "dev@example.com" }]
 readme = "README.md"
-keywords = ['python']
+keywords = ['github', 'pull-requests', 'code-analysis', 'llm', 'rules']
 requires-python = ">=3.11,<4.0"
 classifiers = [
     "Intended Audience :: Developers",
@@ -14,28 +14,44 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Software Development :: Quality Assurance",
 ]
 dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "sqlalchemy",
     "requests",
+    "python-dotenv",
+    "pydantic",
+    "openai",
+    "jinja2",
+    "aiofiles",
 ]
-
-[project.urls]
-Homepage = "https://namuan.github.io/dev-boost/"
-Repository = "https://github.com/namuan/dev-boost"
-Documentation = "https://namuan.github.io/dev-boost/"
 
 [tool.uv]
 dev-dependencies = [
     "pytest",
+    "pytest-asyncio",
+    "httpx",
     "pre-commit",
     "tox-uv",
     "ruff",
     "pyinstaller",
+    "pytest-mock",
+    "coverage",
 ]
 
 [build-system]
-requires = ["setuptools >= 61.0"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project.scripts]
+github-pr-rules-analyzer = "github_pr_rules_analyzer.main:main"
+
+[project.urls]
+Homepage = "https://github.com/yourusername/github-pr-rules-analyzer"
+Repository = "https://github.com/yourusername/github-pr-rules-analyzer"
+Documentation = "https://github.com/yourusername/github-pr-rules-analyzer"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

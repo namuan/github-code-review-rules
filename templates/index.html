@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub PR Rules Analyzer</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo-section">
+                    <i class="fab fa-github logo-icon"></i>
+                    <h1>GitHub PR Rules Analyzer</h1>
+                </div>
+                <nav class="nav-menu">
+                    <a href="#" class="nav-link active" data-page="dashboard">
+                        <i class="fas fa-chart-line"></i> Dashboard
+                    </a>
+                    <a href="#" class="nav-link" data-page="rules">
+                        <i class="fas fa-book"></i> Rules
+                    </a>
+                    <a href="#" class="nav-link" data-page="repositories">
+                        <i class="fas fa-code-branch"></i> Repositories
+                    </a>
+                    <a href="#" class="nav-link" data-page="sync">
+                        <i class="fas fa-sync"></i> Sync
+                    </a>
+                </nav>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Dashboard Page -->
+            <div id="dashboard-page" class="page active">
+                <div class="page-header">
+                    <h2>Dashboard</h2>
+                    <p>Overview of your GitHub PR rules and analytics</p>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon repositories">
+                            <i class="fas fa-code-branch"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="total-repos">0</h3>
+                            <p>Repositories</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon pull-requests">
+                            <i class="fas fa-code-pull-request"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="total-prs">0</h3>
+                            <p>Pull Requests</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon comments">
+                            <i class="fas fa-comments"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="total-comments">0</h3>
+                            <p>Review Comments</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon rules">
+                            <i class="fas fa-book"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="total-rules">0</h3>
+                            <p>Extracted Rules</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Section -->
+                <div class="charts-section">
+                    <div class="chart-container">
+                        <h3>Rule Categories</h3>
+                        <canvas id="categories-chart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h3>Rule Severities</h3>
+                        <canvas id="severities-chart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Recent Rules -->
+                <div class="recent-rules-section">
+                    <div class="section-header">
+                        <h3>Recent Rules</h3>
+                        <a href="#" class="view-all" data-page="rules">View All</a>
+                    </div>
+                    <div class="rules-list" id="recent-rules">
+                        <!-- Rules will be loaded here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rules Page -->
+            <div id="rules-page" class="page">
+                <div class="page-header">
+                    <h2>Coding Rules</h2>
+                    <p>Browse and search extracted coding rules</p>
+                </div>
+
+                <!-- Search and Filters -->
+                <div class="filters-section">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="rules-search" placeholder="Search rules...">
+                    </div>
+                    <div class="filter-group">
+                        <select id="category-filter">
+                            <option value="">All Categories</option>
+                        </select>
+                        <select id="severity-filter">
+                            <option value="">All Severities</option>
+                        </select>
+                        <select id="repository-filter">
+                            <option value="">All Repositories</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Rules List -->
+                <div class="rules-list-container">
+                    <div class="rules-list" id="rules-list">
+                        <!-- Rules will be loaded here -->
+                    </div>
+                    <div class="pagination" id="rules-pagination">
+                        <!-- Pagination will be loaded here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Repositories Page -->
+            <div id="repositories-page" class="page">
+                <div class="page-header">
+                    <h2>Repositories</h2>
+                    <p>Manage your monitored repositories</p>
+                </div>
+
+                <!-- Add Repository -->
+                <div class="add-repository-section">
+                    <h3>Add Repository</h3>
+                    <div class="add-repository-form">
+                        <input type="text" id="repo-owner" placeholder="Repository owner (e.g., username)">
+                        <input type="text" id="repo-name" placeholder="Repository name (e.g., my-repo)">
+                        <button id="add-repo-btn" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Add Repository
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Repositories List -->
+                <div class="repositories-list" id="repositories-list">
+                    <!-- Repositories will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Sync Page -->
+            <div id="sync-page" class="page">
+                <div class="page-header">
+                    <h2>Data Sync</h2>
+                    <p>Manage data synchronization and processing</p>
+                </div>
+
+                <!-- Sync Status -->
+                <div class="sync-status-section">
+                    <h3>Current Status</h3>
+                    <div class="status-cards">
+                        <div class="status-card">
+                            <div class="status-icon">
+                                <i class="fas fa-tasks"></i>
+                            </div>
+                            <div class="status-content">
+                                <h4>Processed Items</h4>
+                                <p id="processed-count">0</p>
+                            </div>
+                        </div>
+                        <div class="status-card">
+                            <div class="status-icon">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                            <div class="status-content">
+                                <h4>Errors</h4>
+                                <p id="error-count">0</p>
+                            </div>
+                        </div>
+                        <div class="status-card">
+                            <div class="status-icon">
+                                <i class="fas fa-list"></i>
+                            </div>
+                            <div class="status-content">
+                                <h4>Queue Size</h4>
+                                <p id="queue-size">0</p>
+                            </div>
+                        </div>
+                        <div class="status-card">
+                            <div class="status-icon">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="status-content">
+                                <h4>Active Workers</h4>
+                                <p id="worker-count">0</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sync Controls -->
+                <div class="sync-controls-section">
+                    <h3>Sync Controls</h3>
+                    <div class="sync-buttons">
+                        <button id="sync-all-btn" class="btn btn-primary">
+                            <i class="fas fa-sync"></i> Sync All Repositories
+                        </button>
+                        <button id="sync-selected-btn" class="btn btn-secondary" disabled>
+                            <i class="fas fa-sync"></i> Sync Selected
+                        </button>
+                        <button id="stop-sync-btn" class="btn btn-danger" disabled>
+                            <i class="fas fa-stop"></i> Stop Sync
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Repository Sync List -->
+                <div class="repository-sync-list" id="repository-sync-list">
+                    <!-- Repository sync items will be loaded here -->
+                </div>
+            </div>
+        </main>
+
+        <!-- Loading Overlay -->
+        <div id="loading-overlay" class="loading-overlay">
+            <div class="loading-spinner">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Loading...</p>
+            </div>
+        </div>
+
+        <!-- Error Toast -->
+        <div id="error-toast" class="toast error-toast">
+            <i class="fas fa-exclamation-circle"></i>
+            <span id="error-message"></span>
+        </div>
+
+        <!-- Success Toast -->
+        <div id="success-toast" class="toast success-toast">
+            <i class="fas fa-check-circle"></i>
+            <span id="success-message"></span>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="/static/js/dashboard.js"></script>
+</body>
+</html>
