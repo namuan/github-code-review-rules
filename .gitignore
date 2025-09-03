@@ -18,8 +18,7 @@ __pycache__/
 !Makefile
 !.pre-commit-config.yaml
 !.editorconfig
-!.eslintrc.js
 !.stylelintrc.json
-!.htmlhintrc
 !LICENSE
 !AGENTS.md
+!biome.json

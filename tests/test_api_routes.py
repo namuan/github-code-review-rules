@@ -1,10 +1,11 @@
 """Unit tests for API routes."""
 
+from collections.abc import Generator
 from unittest.mock import Mock, patch
 
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session, sessionmaker
 
 from github_pr_rules_analyzer.main import app
 from github_pr_rules_analyzer.models import ExtractedRule, PullRequest, Repository, ReviewComment
@@ -20,7 +21,7 @@ Base.metadata.create_all(bind=engine)
 
 
 # Override database dependency
-def override_get_db():
+def override_get_db() -> Generator[Session, None, None]:
     try:
         db = TestingSessionLocal()
         yield db

@@ -1,11 +1,15 @@
 """Code Snippet data model."""
 
 from datetime import datetime
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import Column, DateTime, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import relationship
 
 from github_pr_rules_analyzer.utils.database import Base
+
+if TYPE_CHECKING:
+    from github_pr_rules_analyzer.models.review_comment import ReviewComment
 
 
 class CodeSnippet(Base):
@@ -34,9 +38,10 @@ class CodeSnippet(Base):
     __table_args__ = (Index("idx_code_snippets_lines", "line_start", "line_end"),)
 
     def __repr__(self) -> str:
+        """Return a string representation of the CodeSnippet object."""
         return f"<CodeSnippet(id={self.id}, file='{self.file_path}', lines={self.line_start}-{self.line_end})>"
 
-    def to_dict(self):
+    def to_dict(self) -> dict[str, Any]:
         """Convert model to dictionary."""
         return {
             "id": self.id,
@@ -50,7 +55,15 @@ class CodeSnippet(Base):
         }
 
     @classmethod
-    def from_review_comment(cls, review_comment, file_path, line_start, line_end, content, language=None):
+    def from_review_comment(
+        cls,
+        review_comment: "ReviewComment",
+        file_path: str,
+        line_start: int,
+        line_end: int,
+        content: str,
+        language: str | None = None,
+    ) -> "CodeSnippet":
         """Create code snippet from review comment context."""
         return cls(
             review_comment_id=review_comment.id,
@@ -61,11 +74,11 @@ class CodeSnippet(Base):
             language=language,
         )
 
-    def get_line_count(self):
+    def get_line_count(self) -> int:
         """Get the number of lines in the snippet."""
         return self.line_end - self.line_start + 1
 
-    def get_preview(self, max_lines=10, max_chars=200):
+    def get_preview(self, max_lines: int = 10, max_chars: int = 200) -> str:
         """Get a preview of the code snippet."""
         lines = self.content.split("\n")
 
@@ -79,7 +92,7 @@ class CodeSnippet(Base):
 
         return preview
 
-    def get_language_display_name(self):
+    def get_language_display_name(self) -> str:
         """Get human-readable language name."""
         if not self.language:
             return "Unknown"
@@ -137,7 +150,7 @@ class CodeSnippet(Base):
 
         return len(self.content.strip()) != 0
 
-    def get_relative_path(self, base_path=None):
+    def get_relative_path(self, base_path: str | None = None) -> str:
         """Get relative path if base_path is provided."""
         if not base_path:
             return self.file_path
@@ -147,7 +160,7 @@ class CodeSnippet(Base):
 
         return self.file_path
 
-    def format_for_display(self):
+    def format_for_display(self) -> str:
         """Format code snippet for display."""
         result = []
         result.append(f"File: {self.file_path}")

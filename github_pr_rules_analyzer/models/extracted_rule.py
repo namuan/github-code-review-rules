@@ -1,6 +1,7 @@
 """Extracted Rule data model."""
 
 from datetime import UTC, datetime
+from typing import Any
 
 from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import relationship
@@ -44,9 +45,10 @@ class ExtractedRule(Base):
     __table_args__ = (Index("idx_extracted_rules_dates", "created_at"),)
 
     def __repr__(self) -> str:
+        """Return a string representation of the ExtractedRule object."""
         return f"<ExtractedRule(id={self.id}, category='{self.rule_category}', severity='{self.rule_severity}')>"
 
-    def to_dict(self):
+    def to_dict(self) -> dict[str, Any]:
         """Convert model to dictionary."""
         return {
             "id": self.id,
@@ -63,7 +65,7 @@ class ExtractedRule(Base):
             "updated_at": self.updated_at.isoformat(),
         }
 
-    def to_api_dict(self):
+    def to_api_dict(self) -> dict[str, Any]:
         """Convert to API-friendly dictionary."""
         return {
             "id": self.id,
@@ -95,7 +97,7 @@ class ExtractedRule(Base):
         llm_model=None,
         prompt_used=None,
         response_raw=None,
-    ):
+    ) -> "ExtractedRule":
         """Create extracted rule from LLM response."""
         return cls(
             review_comment_id=review_comment.id,
@@ -139,17 +141,17 @@ class ExtractedRule(Base):
         self.updated_at = datetime.now(UTC)
 
     @property
-    def has_high_confidence(self):
+    def has_high_confidence(self) -> bool:
         """Check if rule has high confidence."""
         return self.confidence_score and self.confidence_score >= 0.8
 
     @property
-    def has_medium_confidence(self):
+    def has_medium_confidence(self) -> bool:
         """Check if rule has medium confidence."""
         return self.confidence_score and 0.5 <= self.confidence_score < 0.8
 
     @property
-    def has_low_confidence(self):
+    def has_low_confidence(self) -> bool:
         """Check if rule has low confidence."""
         return self.confidence_score and self.confidence_score < 0.5
 
@@ -164,7 +166,7 @@ class ExtractedRule(Base):
             return "Medium"
         return "Low"
 
-    def get_severity_display(self):
+    def get_severity_display(self) -> str:
         """Get human-readable severity."""
         if not self.rule_severity:
             return "Unknown"
@@ -179,7 +181,7 @@ class ExtractedRule(Base):
 
         return severity_map.get(self.rule_severity.lower(), self.rule_severity.title())
 
-    def get_category_display(self):
+    def get_category_display(self) -> str:
         """Get human-readable category."""
         if not self.rule_category:
             return "General"
@@ -199,7 +201,7 @@ class ExtractedRule(Base):
 
         return category_map.get(self.rule_category.lower(), self.rule_category.title())
 
-    def get_context_info(self):
+    def get_context_info(self) -> dict[str, Any]:
         """Get context information about the rule."""
         context = {}
 
@@ -214,7 +216,7 @@ class ExtractedRule(Base):
 
         return context
 
-    def format_for_display(self):
+    def format_for_display(self) -> str:
         """Format rule for display."""
         result = []
         result.append(f"Rule ID: {self.id}")
@@ -239,13 +241,13 @@ class ExtractedRule(Base):
 
         return "\n".join(result)
 
-    def get_related_rules(self, session):
+    def get_related_rules(self, _session) -> list[Any]:
         """Get related rules with similar text or category."""
         # This would typically find rules with similar text or same category
         # For now, return empty list
         return []
 
-    def get_usage_statistics(self, session):
+    def get_usage_statistics(self, _session) -> dict[str, Any]:
         """Get usage statistics for this rule."""
         # This would typically query rule_statistics table
         # For now, return empty dict

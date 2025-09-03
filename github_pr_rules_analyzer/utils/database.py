@@ -25,7 +25,7 @@ def get_engine() -> Engine:
         SQLAlchemy engine instance
 
     """
-    global engine
+    global engine  # noqa: PLW0603
 
     if engine is None:
         database_url = get_database_url()
@@ -43,7 +43,7 @@ def get_engine() -> Engine:
         if database_url.startswith("sqlite"):
 
             @event.listens_for(engine, "connect")
-            def set_sqlite_pragma(dbapi_connection, connection_record) -> None:
+            def set_sqlite_pragma(dbapi_connection, _connection_record) -> None:
                 cursor = dbapi_connection.cursor()
                 cursor.execute("PRAGMA journal_mode=WAL")
                 cursor.execute("PRAGMA synchronous=NORMAL")
@@ -63,7 +63,7 @@ def get_session_local() -> sessionmaker:
         Session factory instance
 
     """
-    global SessionLocal
+    global SessionLocal  # noqa: PLW0603
 
     if SessionLocal is None:
         engine = get_engine()
@@ -112,8 +112,8 @@ def check_database_connection() -> bool:
         with engine.connect() as connection:
             connection.execute("SELECT 1")
         return True
-    except Exception as e:
-        logging.exception("Database connection check failed: %s", str(e))
+    except Exception:
+        logging.exception("Database connection check failed")
         return False
 
 
@@ -153,6 +153,7 @@ class DatabaseManager:
     """Database manager for common operations."""
 
     def __init__(self) -> None:
+        """Initialize DatabaseManager."""
         self.logger = logging.getLogger(self.__class__.__name__)
 
     def initialize_database(self) -> bool:
@@ -176,8 +177,8 @@ class DatabaseManager:
             self.logger.error("Database connection failed after initialization")
             return False
 
-        except Exception as e:
-            self.logger.exception("Database initialization failed: %s", str(e))
+        except Exception:
+            self.logger.exception("Database initialization failed")
             return False
 
     def reset_database(self) -> bool:
@@ -200,8 +201,8 @@ class DatabaseManager:
             self.logger.info("Database reset successfully")
             return True
 
-        except Exception as e:
-            self.logger.exception("Database reset failed: %s", str(e))
+        except Exception:
+            self.logger.exception("Database reset failed")
             return False
 
     def backup_database(self, backup_path: Path) -> bool:
@@ -238,6 +239,6 @@ class DatabaseManager:
             self.logger.info("Database backup created at %s", backup_path)
             return True
 
-        except Exception as e:
-            self.logger.exception("Database backup failed: %s", str(e))
+        except Exception:
+            self.logger.exception("Database backup failed")
             return False

@@ -1,6 +1,7 @@
 """Unit tests for GitHub API client."""
 
 import pytest
+import requests
 import responses
 
 from github_pr_rules_analyzer.github.client import GitHubAPIClient
@@ -233,7 +234,7 @@ class TestGitHubAPIClient:
             status=500,
         )
 
-        with pytest.raises(Exception):
+        with pytest.raises(requests.RequestException):
             self.client.get_repository("user", "repo")
 
     def test_initialization_without_token(self) -> None:

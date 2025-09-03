@@ -1,12 +1,13 @@
 """GitHub API client for collecting pull request data."""
 
 import time
+from typing import Any
 from urllib.parse import urljoin
 
 import requests
 
-from ..config import get_settings
-from ..utils import get_logger
+from github_pr_rules_analyzer.config import get_settings
+from github_pr_rules_analyzer.utils import get_logger
 
 logger = get_logger(__name__)
 settings = get_settings()
@@ -66,7 +67,7 @@ class GitHubAPIClient:
 
         self.last_request_time = time.time()
 
-    def _make_request(self, method: str, url: str, **kwargs) -> requests.Response:
+    def _make_request(self, method: str, url: str, **kwargs: Any) -> requests.Response:  # noqa: ANN401
         """Make HTTP request with rate limiting and error handling.
 
         Args:
@@ -113,8 +114,8 @@ class GitHubAPIClient:
 
             return response
 
-        except requests.RequestException as e:
-            logger.exception("Request failed: %s", str(e))
+        except requests.RequestException:
+            logger.exception("Request failed")
             raise
 
     def _get_paginated_results(self, url: str, params: dict | None = None) -> list[dict]:
@@ -343,8 +344,8 @@ class GitHubAPIClient:
                 "stats": stats,
             }
 
-        except Exception as e:
-            logger.exception("Error getting repository info for %s/%s: %s", owner, repo, str(e))
+        except Exception:
+            logger.exception("Error getting repository info for %s/%s", owner, repo)
             raise
 
     def validate_repository_access(self, owner: str, repo: str) -> bool:
@@ -363,8 +364,8 @@ class GitHubAPIClient:
         try:
             self.get_repository(owner, repo)
             return True
-        except Exception as e:
-            logger.exception("Repository access validation failed for %s/%s: %s", owner, repo, str(e))
+        except Exception:
+            logger.exception("Repository access validation failed for %s/%s", owner, repo)
             return False
 
     def get_rate_limit_status(self) -> dict:
@@ -391,6 +392,6 @@ class GitHubAPIClient:
         try:
             response = self._make_request("GET", "/user")
             return response.status_code == 200
-        except Exception as e:
-            logger.exception("Connection test failed: %s", str(e))
+        except Exception:
+            logger.exception("Connection test failed")
             return False

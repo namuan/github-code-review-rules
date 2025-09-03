@@ -1,6 +1,7 @@
 """Repository data model."""
 
 from datetime import UTC, datetime
+from typing import Any
 
 from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text
 from sqlalchemy.orm import relationship
@@ -33,9 +34,10 @@ class Repository(Base):
     pull_requests = relationship("PullRequest", back_populates="repository", cascade="all, delete-orphan")
 
     def __repr__(self) -> str:
+        """Return a string representation of the Repository object."""
         return f"<Repository(id={self.id}, full_name='{self.full_name}')>"
 
-    def to_dict(self):
+    def to_dict(self) -> dict[str, Any]:
         """Convert model to dictionary."""
         return {
             "id": self.id,
@@ -53,7 +55,7 @@ class Repository(Base):
             "updated_at_timestamp": self.updated_at_timestamp.isoformat(),
         }
 
-    def to_github_dict(self):
+    def to_github_dict(self) -> dict[str, Any]:
         """Convert to GitHub API-like format."""
         return {
             "id": self.github_id,
@@ -71,7 +73,7 @@ class Repository(Base):
         }
 
     @classmethod
-    def from_github_data(cls, github_data):
+    def from_github_data(cls, github_data) -> "Repository":
         """Create instance from GitHub API data."""
         return cls(
             github_id=github_data["id"],

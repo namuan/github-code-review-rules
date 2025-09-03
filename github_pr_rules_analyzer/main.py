@@ -18,7 +18,7 @@ settings = get_settings()
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(_app: FastAPI) -> None:
     """Application lifespan events."""
     # Startup
     logger.info("Starting GitHub PR Rules Analyzer API")
@@ -55,21 +55,21 @@ templates = Jinja2Templates(directory="templates")
 
 # Root endpoint with HTML response
 @app.get("/", response_class=HTMLResponse)
-async def root_html(request: Request):
+async def root_html(request: Request) -> HTMLResponse:
     """Root endpoint with HTML response."""
     return templates.TemplateResponse("index.html", {"request": request})
 
 
 # Health check endpoint
 @app.get("/health")
-async def health_check():
+async def health_check() -> dict[str, str]:
     """Health check endpoint."""
     return {"status": "healthy", "service": "GitHub PR Rules Analyzer"}
 
 
 # Error handlers
 @app.exception_handler(404)
-async def not_found_handler(request: Request, exc):
+async def not_found_handler(request: Request, _exc: Exception) -> HTMLResponse:
     """404 error handler."""
     return templates.TemplateResponse(
         "404.html",
@@ -79,7 +79,7 @@ async def not_found_handler(request: Request, exc):
 
 
 @app.exception_handler(500)
-async def internal_error_handler(request: Request, exc):
+async def internal_error_handler(request: Request, _exc: Exception) -> HTMLResponse:
     """500 error handler."""
     return templates.TemplateResponse(
         "500.html",

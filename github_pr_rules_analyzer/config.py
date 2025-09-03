@@ -23,8 +23,8 @@ class Settings(BaseSettings):
     # Application Configuration
     app_name: str = Field("GitHub PR Rules Analyzer", env="APP_NAME")
     app_version: str = Field("1.0.0", env="APP_VERSION")
-    debug: bool = Field(False, env="DEBUG")
-    host: str = Field("0.0.0.0", env="HOST")
+    debug: bool = Field(default=False, env="DEBUG")
+    host: str = Field("127.0.0.1", env="HOST")
     port: int = Field(8000, env="PORT")
 
     # API Configuration
@@ -49,6 +49,8 @@ class Settings(BaseSettings):
     temperature: float = Field(0.1, env="TEMPERATURE")
 
     class Config:
+        """Pydantic configuration class."""
+
         env_file = ".env"
         env_file_encoding = "utf-8"
         case_sensitive = False

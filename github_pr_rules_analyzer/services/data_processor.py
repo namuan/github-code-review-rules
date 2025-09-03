@@ -5,9 +5,9 @@ import threading
 from datetime import UTC, datetime
 from typing import Any
 
-from ..models import CodeSnippet, CommentThread, ExtractedRule, ReviewComment, RuleStatistics
-from ..utils import get_logger
-from ..utils.database import get_session_local
+from github_pr_rules_analyzer.models import CodeSnippet, CommentThread, ExtractedRule, ReviewComment, RuleStatistics
+from github_pr_rules_analyzer.utils import get_logger
+from github_pr_rules_analyzer.utils.database import get_session_local
 
 logger = get_logger(__name__)
 
@@ -80,8 +80,8 @@ class DataProcessor:
 
                 try:
                     self._process_task(task)
-                except Exception as e:
-                    logger.exception("Error processing task: %s", str(e))
+                except Exception:
+                    logger.exception("Error processing task")
                     with self.lock:
                         self.error_count += 1
 
@@ -90,8 +90,8 @@ class DataProcessor:
 
             except queue.Empty:
                 continue
-            except Exception as e:
-                logger.exception("Worker error: %s", str(e))
+            except Exception:
+                logger.exception("Worker error")
 
     def _process_task(self, task: dict[str, Any]) -> None:
         """Process a single task.
@@ -135,8 +135,8 @@ class DataProcessor:
             }
             self.task_queue.put(task)
             return True
-        except Exception as e:
-            logger.exception("Error adding review comment task: %s", str(e))
+        except Exception:
+            logger.exception("Error adding review comment task")
             return False
 
     def add_code_snippet_task(self, snippet_data: dict[str, Any]) -> bool:
@@ -158,8 +158,8 @@ class DataProcessor:
             }
             self.task_queue.put(task)
             return True
-        except Exception as e:
-            logger.exception("Error adding code snippet task: %s", str(e))
+        except Exception:
+            logger.exception("Error adding code snippet task")
             return False
 
     def add_comment_thread_task(self, thread_data: dict[str, Any]) -> bool:
@@ -181,8 +181,8 @@ class DataProcessor:
             }
             self.task_queue.put(task)
             return True
-        except Exception as e:
-            logger.exception("Error adding comment thread task: %s", str(e))
+        except Exception:
+            logger.exception("Error adding comment thread task")
             return False
 
     def add_rule_extraction_task(self, rule_data: dict[str, Any]) -> bool:
@@ -204,8 +204,8 @@ class DataProcessor:
             }
             self.task_queue.put(task)
             return True
-        except Exception as e:
-            logger.exception("Error adding rule extraction task: %s", str(e))
+        except Exception:
+            logger.exception("Error adding rule extraction task")
             return False
 
     def add_statistics_update_task(self, stats_data: dict[str, Any]) -> bool:
@@ -227,8 +227,8 @@ class DataProcessor:
             }
             self.task_queue.put(task)
             return True
-        except Exception as e:
-            logger.exception("Error adding statistics update task: %s", str(e))
+        except Exception:
+            logger.exception("Error adding statistics update task")
             return False
 
     def _process_review_comment(self, comment_data: dict[str, Any]) -> None:
@@ -260,8 +260,8 @@ class DataProcessor:
             with self.lock:
                 self.processed_count += 1
 
-        except Exception as e:
-            logger.exception("Error processing review comment: %s", str(e))
+        except Exception:
+            logger.exception("Error processing review comment")
             raise
 
     def _process_code_snippet(self, snippet_data: dict[str, Any]) -> None:
@@ -284,8 +284,8 @@ class DataProcessor:
             with self.lock:
                 self.processed_count += 1
 
-        except Exception as e:
-            logger.exception("Error processing code snippet: %s", str(e))
+        except Exception:
+            logger.exception("Error processing code snippet")
             raise
 
     def _process_comment_thread(self, thread_data: dict[str, Any]) -> None:
@@ -308,8 +308,8 @@ class DataProcessor:
             with self.lock:
                 self.processed_count += 1
 
-        except Exception as e:
-            logger.exception("Error processing comment thread: %s", str(e))
+        except Exception:
+            logger.exception("Error processing comment thread")
             raise
 
     def _extract_rule(self, rule_data: dict[str, Any]) -> None:
@@ -351,8 +351,8 @@ class DataProcessor:
             with self.lock:
                 self.processed_count += 1
 
-        except Exception as e:
-            logger.exception("Error extracting rule: %s", str(e))
+        except Exception:
+            logger.exception("Error extracting rule")
             raise
 
     def _update_statistics(self, stats_data: dict[str, Any]) -> None:
@@ -383,11 +383,11 @@ class DataProcessor:
                 existing_stats.increment_occurrence(confidence_score)
             else:
                 # Create new statistics
-                from ..models import ExtractedRule
+                from github_pr_rules_analyzer.models import ExtractedRule
 
                 rule = self.session.query(ExtractedRule).filter(ExtractedRule.id == rule_id).first()
                 if rule:
-                    from ..models import Repository
+                    from github_pr_rules_analyzer.models import Repository
 
                     repository = self.session.query(Repository).filter(Repository.id == repository_id).first()
                     if repository:
@@ -399,8 +399,8 @@ class DataProcessor:
             with self.lock:
                 self.processed_count += 1
 
-        except Exception as e:
-            logger.exception("Error updating statistics: %s", str(e))
+        except Exception:
+            logger.exception("Error updating statistics")
             raise
 
     def _validate_review_comment(self, comment_data: dict[str, Any]) -> bool:
@@ -521,7 +521,7 @@ class DataProcessor:
             logger.debug("Updated snippet %d", snippet_data["id"])
         else:
             # Create new snippet
-            from ..models import ReviewComment
+            from github_pr_rules_analyzer.models import ReviewComment
 
             review_comment = (
                 self.session.query(ReviewComment)
@@ -570,7 +570,7 @@ class DataProcessor:
             logger.debug("Updated thread %d", thread_data["id"])
         else:
             # Create new thread
-            from ..models import ReviewComment
+            from github_pr_rules_analyzer.models import ReviewComment
 
             review_comment = (
                 self.session.query(ReviewComment)
@@ -855,8 +855,8 @@ class DataProcessor:
 
             return results
 
-        except Exception as e:
-            logger.exception("Error processing batch: %s", str(e))
+        except Exception:
+            logger.exception("Error processing batch")
             results["errors"] = results["total"]
             results["end_time"] = datetime.now(UTC)
             return results

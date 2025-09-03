@@ -1,6 +1,7 @@
 """Rule Statistics data model."""
 
 from datetime import UTC, datetime
+from typing import Any
 
 from sqlalchemy import Column, DateTime, Float, ForeignKey, Index, Integer
 from sqlalchemy.orm import relationship
@@ -31,9 +32,10 @@ class RuleStatistics(Base):
     __table_args__ = (Index("idx_rule_statistics_dates", "first_seen", "last_seen"),)
 
     def __repr__(self) -> str:
+        """Return a string representation of the RuleStatistics object."""
         return f"<RuleStatistics(id={self.id}, rule_id={self.rule_id}, count={self.occurrence_count})>"
 
-    def to_dict(self):
+    def to_dict(self) -> dict[str, Any]:
         """Convert model to dictionary."""
         return {
             "id": self.id,
@@ -48,7 +50,7 @@ class RuleStatistics(Base):
         }
 
     @classmethod
-    def from_rule_and_repository(cls, rule, repository):
+    def from_rule_and_repository(cls, rule, repository) -> "RuleStatistics":
         """Create rule statistics from rule and repository."""
         now = datetime.now(UTC)
         return cls(
@@ -140,7 +142,7 @@ class RuleStatistics(Base):
         """Get human-readable recency description."""
         from datetime import timedelta
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         age = now - self.last_seen
 
         if age < timedelta(hours=24):
@@ -153,7 +155,7 @@ class RuleStatistics(Base):
             return "Last 3 months"
         return "Ago"
 
-    def format_for_display(self):
+    def format_for_display(self) -> str:
         """Format statistics for display."""
         result = []
         result.append(f"Statistics ID: {self.id}")
@@ -167,7 +169,7 @@ class RuleStatistics(Base):
 
         return "\n".join(result)
 
-    def get_impact_score(self):
+    def get_impact_score(self) -> float:
         """Calculate impact score based on frequency and confidence."""
         if not self.avg_confidence or self.occurrence_count == 0:
             return 0
@@ -202,7 +204,7 @@ class RuleStatistics(Base):
             return "low"
         return "minimal"
 
-    def get_priority_description(self):
+    def get_priority_description(self) -> str:
         """Get human-readable priority description."""
         priority_map = {
             "high": "High Priority - High impact and frequent occurrence",

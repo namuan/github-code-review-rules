@@ -1,3 +1,5 @@
+"""Performance testing script for GitHub PR Rules Analyzer."""
+
 import argparse
 import asyncio
 import secrets

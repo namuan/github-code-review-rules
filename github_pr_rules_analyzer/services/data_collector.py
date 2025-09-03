@@ -3,10 +3,10 @@
 from datetime import UTC, datetime
 from typing import Any
 
-from ..github.client import GitHubAPIClient
-from ..models import CodeSnippet, CommentThread, PullRequest, Repository, ReviewComment
-from ..utils import get_logger
-from ..utils.database import get_session_local
+from github_pr_rules_analyzer.github.client import GitHubAPIClient
+from github_pr_rules_analyzer.models import CodeSnippet, CommentThread, PullRequest, Repository, ReviewComment
+from github_pr_rules_analyzer.utils import get_logger
+from github_pr_rules_analyzer.utils.database import get_session_local
 
 logger = get_logger(__name__)
 
@@ -96,11 +96,11 @@ class DataCollector:
             duration = (results["end_time"] - results["start_time"]).total_seconds()
             logger.info("Data collection completed in %.2f seconds", duration)
             "Collected: %d PRs, %d comments, %d snippets, %d threads" % (
-                      len(results["pull_requests"]),
-                      len(results["review_comments"]),
-                      len(results["code_snippets"]),
-                      len(results["comment_threads"]),
-                  )
+                len(results["pull_requests"]),
+                len(results["review_comments"]),
+                len(results["code_snippets"]),
+                len(results["comment_threads"]),
+            )
 
             return results
 
@@ -274,8 +274,8 @@ class DataCollector:
 
             return results
 
-        except Exception as e:
-            logger.exception("Error processing comment: %s", str(e))
+        except Exception:
+            logger.exception("Error processing comment")
             return results
 
     def _upsert_review_comment(self, comment_data: dict[str, Any], pull_request_id: int) -> ReviewComment:
@@ -390,8 +390,8 @@ class DataCollector:
 
                 self.session.commit()
 
-        except Exception as e:
-            logger.exception("Error extracting code snippets: %s", str(e))
+        except Exception:
+            logger.exception("Error extracting code snippets")
 
         return snippets
 
@@ -484,8 +484,8 @@ class DataCollector:
 
             return thread
 
-        except Exception as e:
-            logger.exception("Error creating comment thread: %s", str(e))
+        except Exception:
+            logger.exception("Error creating comment thread")
             return None
 
     def get_collection_status(self) -> dict[str, Any]:
@@ -525,7 +525,7 @@ class DataCollector:
             }
 
         except Exception as e:
-            logger.exception("Error getting collection status: %s", str(e))
+            logger.exception("Error getting collection status")
             return {"error": str(e)}
 
     def cleanup_old_data(self, days: int = 30) -> dict[str, int]:
@@ -604,6 +604,6 @@ class DataCollector:
             return results
 
         except Exception as e:
-            logger.exception("Error cleaning up old data: %s", str(e))
+            logger.exception("Error cleaning up old data")
             self.session.rollback()
             return {"error": str(e)}

@@ -18,7 +18,7 @@ router = APIRouter()
 
 
 # Dependency to get database session
-def get_db() -> Any:
+def get_db() -> Session:
     """Get database session."""
     db = get_session_local()
     try:
@@ -71,7 +71,7 @@ async def get_repositories(
             "limit": limit,
         }
     except Exception as e:
-        logger.exception("Error getting repositories: %s", e)
+        logger.exception("Error getting repositories")
         raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
@@ -127,7 +127,7 @@ async def add_repository(
     except HTTPException:
         raise
     except Exception as e:
-        logger.exception("Error adding repository: %s", e)
+        logger.exception("Error adding repository")
         raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
@@ -135,7 +135,7 @@ async def add_repository(
 async def delete_repository(
     repo_id: Annotated[int, Path(ge=1)] = ...,
     db: Session = Depends(get_db),
-):
+) -> dict[str, str]:
     """Delete a repository."""
     try:
         repository = db.query(Repository).filter(Repository.id == repo_id).first()
@@ -151,8 +151,8 @@ async def delete_repository(
     except HTTPException:
         raise
     except Exception as e:
-        logger.exception("Error deleting repository: %s", str(e))
-        raise HTTPException(status_code=500, detail="Internal server error")
+        logger.exception("Error deleting repository")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 # Data Collection Endpoints
@@ -161,7 +161,7 @@ async def sync_repository(
     repo_id: Annotated[int, Path(ge=1)] = ...,
     services: dict[str, Any] = Depends(get_services),
     db: Session = Depends(get_db),
-):
+) -> dict[str, Any]:
     """Sync repository data."""
     try:
         # Check if repository exists
@@ -204,14 +204,14 @@ async def sync_repository(
     except HTTPException:
         raise
     except Exception as e:
-        logger.exception("Error syncing repository: %s", str(e))
-        raise HTTPException(status_code=500, detail="Internal server error")
+        logger.exception("Error syncing repository")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get("/api/v1/sync/status")
 async def get_sync_status(
     services: Annotated[dict[str, Any], Depends(get_services)],
-):
+) -> dict[str, Any]:
     """Get sync status."""
     try:
         data_processor = services["data_processor"]
@@ -223,8 +223,8 @@ async def get_sync_status(
         }
 
     except Exception as e:
-        logger.exception("Error getting sync status: %s", str(e))
-        raise HTTPException(status_code=500, detail="Internal server error")
+        logger.exception("Error getting sync status")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 # Rule Extraction Endpoints
@@ -233,7 +233,7 @@ async def extract_rules(
     comment_ids: list[int],
     services: Annotated[dict[str, Any], Depends(get_services)],
     db: Annotated[Session, Depends(get_db)],
-):
+) -> dict[str, Any]:
     """Extract rules from review comments."""
     try:
         # Get review comments
@@ -300,8 +300,8 @@ async def extract_rules(
     except HTTPException:
         raise
     except Exception as e:
-        logger.exception("Error extracting rules: %s", str(e))
-        raise HTTPException(status_code=500, detail="Internal server error")
+        logger.exception("Error extracting rules")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 # Rule Management Endpoints
@@ -313,7 +313,7 @@ async def get_rules(
     severity: Annotated[str | None, Query()] = None,
     repository_id: Annotated[int | None, Query()] = None,
     db: Session = Depends(get_db),
-):
+) -> list[dict[str, Any]]:
     """Get all rules with filtering."""
     try:
         query = db.query(ExtractedRule)
@@ -348,15 +348,15 @@ async def get_rules(
         }
 
     except Exception as e:
-        logger.exception("Error getting rules: %s", str(e))
-        raise HTTPException(status_code=500, detail="Internal server error")
+        logger.exception("Error getting rules")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get("/api/v1/rules/{rule_id}")
 async def get_rule(
     rule_id: Annotated[int, Path(ge=1)] = ...,
     db: Session = Depends(get_db),
-):
+) -> dict[str, Any]:
     """Get a specific rule."""
     try:
         rule = db.query(ExtractedRule).filter(ExtractedRule.id == rule_id).first()
@@ -368,8 +368,8 @@ async def get_rule(
     except HTTPException:
         raise
     except Exception as e:
-        logger.exception("Error getting rule: %s", str(e))
-        raise HTTPException(status_code=500, detail="Internal server error")
+        logger.exception("Error getting rule")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get("/api/v1/rules/search")
@@ -378,7 +378,7 @@ async def search_rules(
     skip: Annotated[int, Query(ge=0)] = 0,
     limit: Annotated[int, Query(ge=1, le=1000)] = 100,
     db: Session = Depends(get_db),
-):
+) -> list[dict[str, Any]]:
     """Search rules by text."""
     try:
         # Simple text search in rule_text and explanation
@@ -409,13 +409,13 @@ async def search_rules(
         }
 
     except Exception as e:
-        logger.exception("Error searching rules: %s", str(e))
-        raise HTTPException(status_code=500, detail="Internal server error")
+        logger.exception("Error searching rules")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 # Statistics and Analytics Endpoints
 @router.get("/api/v1/rules/categories")
-async def get_rule_categories(db: Annotated[Session, Depends(get_db)]):
+async def get_rule_categories(db: Annotated[Session, Depends(get_db)]) -> dict[str, list[str]]:
     """Get all rule categories."""
     try:
         categories = db.query(ExtractedRule.rule_category).distinct().all()
@@ -423,12 +423,12 @@ async def get_rule_categories(db: Annotated[Session, Depends(get_db)]):
             "categories": [cat[0] for cat in categories if cat[0]],
         }
     except Exception as e:
-        logger.exception("Error getting categories: %s", str(e))
-        raise HTTPException(status_code=500, detail="Internal server error")
+        logger.exception("Error getting categories")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get("/api/v1/rules/severities")
-async def get_rule_severities(db: Annotated[Session, Depends(get_db)]):
+async def get_rule_severities(db: Annotated[Session, Depends(get_db)]) -> dict[str, list[str]]:
     """Get all rule severities."""
     try:
         severities = db.query(ExtractedRule.rule_severity).distinct().all()
@@ -436,8 +436,8 @@ async def get_rule_severities(db: Annotated[Session, Depends(get_db)]):
             "severities": [sev[0] for sev in severities if sev[0]],
         }
     except Exception as e:
-        logger.exception("Error getting severities: %s", str(e))
-        raise HTTPException(status_code=500, detail="Internal server error")
+        logger.exception("Error getting severities")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get("/api/v1/rules/statistics")
@@ -446,7 +446,7 @@ async def get_rule_statistics(
     category: Annotated[str | None, Query()] = None,
     severity: Annotated[str | None, Query()] = None,
     db: Session = Depends(get_db),
-):
+) -> dict[str, Any]:
     """Get rule statistics."""
     try:
         # Get basic statistics
@@ -467,10 +467,29 @@ async def get_rule_statistics(
 
         total_rules = query.count()
 
-        category_stats = dict(categories)
+        # Get category distribution
+        category_query = db.query(ExtractedRule.rule_category, db.func.count(ExtractedRule.id))
+        if repository_id:
+            category_query = (
+                category_query.join(ReviewComment).join(PullRequest).filter(PullRequest.repository_id == repository_id)
+            )
+        if category:
+            category_query = category_query.filter(ExtractedRule.rule_category == category)
+        if severity:
+            category_query = category_query.filter(ExtractedRule.rule_severity == severity)
+        category_stats = dict(category_query.group_by(ExtractedRule.rule_category).all())
 
         # Get severity distribution
-        severity_stats = dict(severities)
+        severity_query = db.query(ExtractedRule.rule_severity, db.func.count(ExtractedRule.id))
+        if repository_id:
+            severity_query = (
+                severity_query.join(ReviewComment).join(PullRequest).filter(PullRequest.repository_id == repository_id)
+            )
+        if category:
+            severity_query = severity_query.filter(ExtractedRule.rule_category == category)
+        if severity:
+            severity_query = severity_query.filter(ExtractedRule.rule_severity == severity)
+        severity_stats = dict(severity_query.group_by(ExtractedRule.rule_severity).all())
 
         # Get average confidence
         avg_confidence = db.query(db.func.avg(ExtractedRule.confidence_score)).scalar() or 0
@@ -488,15 +507,15 @@ async def get_rule_statistics(
         }
 
     except Exception as e:
-        logger.exception("Error getting statistics: %s", str(e))
-        raise HTTPException(status_code=500, detail="Internal server error")
+        logger.exception("Error getting statistics")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 # Dashboard Endpoints
 @router.get("/api/v1/dashboard")
 async def get_dashboard_data(
     db: Annotated[Session, Depends(get_db)],
-):
+) -> dict[str, Any]:
     """Get dashboard data."""
     try:
         # Repository statistics
@@ -560,8 +579,8 @@ async def get_dashboard_data(
         }
 
     except Exception as e:
-        logger.exception("Error getting dashboard data: %s", str(e))
-        raise HTTPException(status_code=500, detail="Internal server error")
+        logger.exception("Error getting dashboard data")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 # PR Detail Endpoints
@@ -569,7 +588,7 @@ async def get_dashboard_data(
 async def get_pull_request(
     pr_id: Annotated[int, Path(ge=1)] = ...,
     db: Session = Depends(get_db),
-):
+) -> dict[str, Any]:
     """Get pull request details."""
     try:
         pr = db.query(PullRequest).filter(PullRequest.id == pr_id).first()
@@ -608,8 +627,8 @@ async def get_pull_request(
     except HTTPException:
         raise
     except Exception as e:
-        logger.exception("Error getting pull request: %s", str(e))
-        raise HTTPException(status_code=500, detail="Internal server error")
+        logger.exception("Error getting pull request")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 # Repository-specific Endpoints
@@ -621,7 +640,7 @@ async def get_repository_rules(
     category: Annotated[str | None, Query()] = None,
     severity: Annotated[str | None, Query()] = None,
     db: Session = Depends(get_db),
-):
+) -> list[dict[str, Any]]:
     """Get rules for a specific repository."""
     try:
         # Check if repository exists
@@ -667,15 +686,15 @@ async def get_repository_rules(
     except HTTPException:
         raise
     except Exception as e:
-        logger.exception("Error getting repository rules: %s", str(e))
-        raise HTTPException(status_code=500, detail="Internal server error")
+        logger.exception("Error getting repository rules")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get("/api/v1/repositories/{repo_id}/statistics")
 async def get_repository_statistics(
     repo_id: Annotated[int, Path(ge=1)] = ...,
     db: Session = Depends(get_db),
-):
+) -> dict[str, Any]:
     """Get statistics for a specific repository."""
     try:
         # Check if repository exists
@@ -768,13 +787,13 @@ async def get_repository_statistics(
     except HTTPException:
         raise
     except Exception as e:
-        logger.exception("Error getting repository statistics: %s", str(e))
-        raise HTTPException(status_code=500, detail="Internal server error")
+        logger.exception("Error getting repository statistics")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 # Health Check Endpoint
 @router.get("/api/v1/health")
-async def health_check():
+async def health_check() -> dict[str, str]:
     """Health check endpoint."""
     return {
         "status": "healthy",

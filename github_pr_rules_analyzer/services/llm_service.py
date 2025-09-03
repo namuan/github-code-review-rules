@@ -6,8 +6,8 @@ from typing import Any
 
 from openai import OpenAI
 
-from ..config import get_settings
-from ..utils import get_logger
+from github_pr_rules_analyzer.config import get_settings
+from github_pr_rules_analyzer.utils import get_logger
 
 logger = get_logger(__name__)
 settings = get_settings()
@@ -64,8 +64,8 @@ class LLMService:
             # Parse response
             return self._parse_llm_response(response, comment_data)
 
-        except Exception as e:
-            logger.exception("Error extracting rule with LLM: %s", str(e))
+        except Exception:
+            logger.exception("Error extracting rule with LLM")
             # Fallback to rule-based extraction
             return self._fallback_rule_extraction(comment_data)
 
@@ -88,8 +88,8 @@ class LLMService:
                 rule_data = self.extract_rule_from_comment(comment_data)
                 if rule_data:
                     results.append(rule_data)
-            except Exception as e:
-                logger.exception("Error processing comment %s: %s", comment_data.get("id", "unknown"), str(e))
+            except Exception:
+                logger.exception("Error processing comment %s", comment_data.get("id", "unknown"))
                 continue
 
         return results
@@ -185,7 +185,7 @@ If no specific coding rule can be extracted, return null.
                 # Validate response is JSON
                 try:
                     json.loads(response_text)
-                except json.JSONDecodeError:
+                except json.JSONDecodeError as e:
                     logger.warning("LLM response is not valid JSON: %s", response_text)
                     msg = "Invalid JSON response from LLM"
                     raise ValueError(msg) from e
@@ -262,11 +262,11 @@ If no specific coding rule can be extracted, return null.
                 "context": comment_data,
             }
 
-        except json.JSONDecodeError as e:
-            logger.exception("Failed to parse LLM response as JSON: %s", str(e))
+        except json.JSONDecodeError:
+            logger.exception("Failed to parse LLM response as JSON")
             return None
-        except Exception as e:
-            logger.exception("Error parsing LLM response: %s", str(e))
+        except Exception:
+            logger.exception("Error parsing LLM response")
             return None
 
     def _normalize_category(self, category: str) -> str:
@@ -582,8 +582,8 @@ If no specific coding rule can be extracted, return null.
 
             return response.choices[0].message.content is not None
 
-        except Exception as e:
-            logger.exception("LLM connection test failed: %s", str(e))
+        except Exception:
+            logger.exception("LLM connection test failed")
             return False
 
     def get_model_info(self) -> dict[str, Any]:
@@ -632,5 +632,5 @@ If no specific coding rule can be extracted, return null.
             }
 
         except Exception as e:
-            logger.exception("Error getting usage stats: %s", str(e))
+            logger.exception("Error getting usage stats")
             return {"error": str(e)}

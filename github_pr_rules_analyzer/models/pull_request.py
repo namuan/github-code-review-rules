@@ -1,6 +1,7 @@
 """Pull Request data model."""
 
 from datetime import UTC, datetime
+from typing import Any
 
 from sqlalchemy import Column, DateTime, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import relationship
@@ -41,9 +42,10 @@ class PullRequest(Base):
     __table_args__ = (Index("idx_pull_requests_dates", "created_at", "closed_at"),)
 
     def __repr__(self) -> str:
+        """Return a string representation of the PullRequest object."""
         return f"<PullRequest(id={self.id}, number={self.number}, title='{self.title[:50]}...')>"
 
-    def to_dict(self):
+    def to_dict(self) -> dict[str, Any]:
         """Convert model to dictionary."""
         return {
             "id": self.id,
@@ -64,7 +66,7 @@ class PullRequest(Base):
             "updated_at_timestamp": self.updated_at_timestamp.isoformat(),
         }
 
-    def to_github_dict(self):
+    def to_github_dict(self) -> dict[str, Any]:
         """Convert to GitHub API-like format."""
         return {
             "id": self.github_id,
@@ -85,7 +87,7 @@ class PullRequest(Base):
         }
 
     @classmethod
-    def from_github_data(cls, github_data, repository_id):
+    def from_github_data(cls, github_data, repository_id) -> "PullRequest":
         """Create instance from GitHub API data."""
         return cls(
             github_id=github_data["id"],
@@ -119,28 +121,28 @@ class PullRequest(Base):
         self.updated_at_timestamp = datetime.now(UTC)
 
     @property
-    def is_closed(self):
+    def is_closed(self) -> bool:
         """Check if PR is closed."""
         return self.state == "closed"
 
     @property
-    def is_merged(self):
+    def is_merged(self) -> bool:
         """Check if PR is merged."""
         return self.merged_at is not None
 
     @property
-    def is_open(self):
+    def is_open(self) -> bool:
         """Check if PR is open."""
         return self.state == "open"
 
-    def get_review_comments_count(self):
+    def get_review_comments_count(self) -> int:
         """Get total number of review comments."""
         return len(self.review_comments)
 
-    def get_comment_threads_count(self):
+    def get_comment_threads_count(self) -> int:
         """Get total number of comment threads."""
         return len(self.comment_threads)
 
-    def get_extracted_rules_count(self):
+    def get_extracted_rules_count(self) -> int:
         """Get total number of extracted rules."""
         return sum(len(comment.extracted_rules) for comment in self.review_comments)

@@ -1,18 +1,20 @@
 """Unit tests for data models."""
 
+from collections.abc import Generator
+
 import pytest
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session, sessionmaker
 
 from github_pr_rules_analyzer.models import ExtractedRule, PullRequest, Repository, ReviewComment
 
 
 @pytest.fixture
-def db_session():
+def db_session() -> Generator[Session, None, None]:
     """Create a test database session."""
     # Use in-memory SQLite for testing
     engine = create_engine("sqlite:///:memory:")
-    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    session_local = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
     # Create tables
     from github_pr_rules_analyzer.utils.database import Base
@@ -20,7 +22,7 @@ def db_session():
     Base.metadata.create_all(bind=engine)
 
     # Create session
-    session = SessionLocal()
+    session = session_local()
     yield session
 
     # Close session

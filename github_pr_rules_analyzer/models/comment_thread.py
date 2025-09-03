@@ -1,6 +1,7 @@
 """Comment Thread data model."""
 
 from datetime import UTC, datetime
+from typing import Any
 
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Index, Integer, String
 from sqlalchemy.orm import relationship
@@ -40,9 +41,10 @@ class CommentThread(Base):
     __table_args__ = (Index("idx_comment_threads_path", "thread_path"),)
 
     def __repr__(self) -> str:
+        """Return a string representation of the CommentThread object."""
         return f"<CommentThread(id={self.id}, path='{self.thread_path}', position={self.thread_position})>"
 
-    def to_dict(self):
+    def to_dict(self) -> dict[str, Any]:
         """Convert model to dictionary."""
         return {
             "id": self.id,
@@ -56,7 +58,7 @@ class CommentThread(Base):
         }
 
     @classmethod
-    def from_review_comment(cls, review_comment, pull_request_id):
+    def from_review_comment(cls, review_comment, pull_request_id) -> "CommentThread":
         """Create comment thread from review comment."""
         return cls(
             pull_request_id=pull_request_id,
@@ -85,24 +87,24 @@ class CommentThread(Base):
         """Get a unique key for this thread."""
         return f"{self.thread_path}:{self.thread_position}"
 
-    def matches_position(self, path, position):
+    def matches_position(self, path: str, position: int) -> bool:
         """Check if this thread matches the given path and position."""
         return self.thread_path == path and self.thread_position == position
 
-    def get_related_comments(self, session):
+    def get_related_comments(self, _session) -> list[Any]:
         """Get all comments related to this thread."""
         # This would typically query for other comments in the same thread
         # For now, we just return the original review comment
         return [self.review_comment]
 
-    def get_thread_summary(self):
+    def get_thread_summary(self) -> str:
         """Get a summary of the thread."""
         if not self.review_comment:
             return "No associated comment"
 
         return self.review_comment.get_context_summary(100)
 
-    def get_participants(self):
+    def get_participants(self) -> list[str]:
         """Get list of participants in the thread."""
         participants = set()
 
@@ -121,11 +123,11 @@ class CommentThread(Base):
         # In a more complex implementation, this would count all thread comments
         return 1
 
-    def get_last_activity(self):
+    def get_last_activity(self) -> datetime:
         """Get the last activity timestamp."""
         return max(self.created_at, self.updated_at)
 
-    def format_for_display(self):
+    def format_for_display(self) -> str:
         """Format thread for display."""
         result = []
         result.append(f"Thread ID: {self.id}")
