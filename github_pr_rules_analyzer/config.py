@@ -13,10 +13,9 @@ class Settings(BaseSettings):
     github_token: str = Field(..., env="GITHUB_TOKEN")
     github_api_base_url: str = Field("https://api.github.com", env="GITHUB_API_BASE_URL")
 
-    # LLM Service Configuration
-    openai_api_key: str = Field(..., env="OPENAI_API_KEY")
-    openai_api_base_url: str = Field("https://api.openai.com/v1", env="OPENAI_API_BASE_URL")
-    openai_model: str = Field("gpt-4", env="OPENAI_MODEL")
+    # Ollama Configuration
+    ollama_api_base_url: str = Field("http://localhost:11434/v1", env="OLLAMA_API_BASE_URL")
+    ollama_model: str = Field("llama3.2:latest", env="OLLAMA_MODEL")
 
     # Database Configuration
     database_url: str = Field("sqlite:///./github_pr_rules.db", env="DATABASE_URL")

@@ -16,24 +16,26 @@ settings = get_settings()
 class LLMService:
     """Service for interacting with LLM to extract coding rules."""
 
-    def __init__(self, api_key: str | None = None, model: str = "gpt-4") -> None:
-        """Initialize LLM service.
+    def __init__(self, model: str | None = None) -> None:
+        """Initialize LLM service with Ollama.
 
         Args:
         ----
-            api_key: OpenAI API key
             model: Model to use for rule extraction
 
         """
-        self.api_key = api_key or settings.openai_api_key
-        self.model = model
+        # Use Ollama configuration
+        self.model = model or settings.ollama_model
+        self.api_base_url = settings.ollama_api_base_url
+
         self.client = None
 
-        # Initialize OpenAI client
-        if self.api_key:
-            self.client = OpenAI(api_key=self.api_key)
-        else:
-            logger.warning("No OpenAI API key provided")
+        # Initialize Ollama client
+        self.client = OpenAI(
+            base_url=self.api_base_url,
+            api_key="ollama",  # Required but unused for Ollama
+        )
+        logger.info("Initialized LLM service with Ollama: %s", self.model)
 
     def __del__(self) -> None:
         """Clean up resources."""
@@ -596,20 +598,9 @@ If no specific coding rule can be extracted, return null.
         """
         return {
             "model": self.model,
-            "api_key_configured": bool(self.api_key),
             "client_available": self.client is not None,
             "connection_test": self.test_connection() if self.client else False,
         }
-
-    def validate_api_key(self) -> bool:
-        """Validate API key configuration.
-
-        Returns
-        -------
-            True if API key is valid
-
-        """
-        return bool(self.api_key and self.api_key.strip())
 
     def get_usage_stats(self) -> dict[str, Any]:
         """Get usage statistics (if available).
@@ -627,7 +618,6 @@ If no specific coding rule can be extracted, return null.
             # For now, return basic info
             return {
                 "model": self.model,
-                "api_key_configured": self.validate_api_key(),
                 "connection_test": self.test_connection(),
             }
 

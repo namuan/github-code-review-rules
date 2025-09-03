@@ -41,7 +41,7 @@ SUM:                            48           1992           1653           8371
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │   GitHub API    │    │   LLM Service   │    │   Web UI        │
 │                 │    │                 │    │                 │
-│ - OAuth         │    │ - OpenAI API    │    │ - React/Vue     │
+│ - OAuth         │    │ - Ollama API    │    │ - React/Vue     │
 │ - Rate Limiting │    │ - Rule Parsing  │    │ - Data Display  │
 │ - Data Fetching │    │ - Response      │    │ - Search/Filter │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
@@ -70,7 +70,7 @@ SUM:                            48           1992           1653           8371
 - **Backend**: Python 3.11+ with FastAPI
 - **Database**: SQLite (development), PostgreSQL (production)
 - **Frontend**: HTML5, CSS3, JavaScript (Vanilla JS)
-- **API Integration**: GitHub API v3/v4, OpenAI API
+- **API Integration**: GitHub API v3/v4, Ollama API
 - **Testing**: pytest, pytest-asyncio, pytest-cov
 - **Deployment**: Docker, Docker Compose, systemd
 - **Monitoring**: Prometheus, Grafana (optional)
@@ -104,7 +104,6 @@ SUM:                            48           1992           1653           8371
 
    ```bash
    export GITHUB_TOKEN=your_github_token
-   export LLM_API_KEY=your_openai_api_key
    export SECRET_KEY=your_secret_key
    ```
 
@@ -149,9 +148,8 @@ sudo ./deploy/deploy.sh
 | `DATABASE_URL`        | Database connection     | `sqlite:///app.db`          |
 | `GITHUB_TOKEN`        | GitHub API token        | Required                    |
 | `GITHUB_API_BASE_URL` | GitHub API base URL     | `https://api.github.com`    |
-| `LLM_API_KEY`         | LLM service API key     | Required                    |
-| `LLM_API_BASE_URL`    | LLM API base URL        | `https://api.openai.com/v1` |
-| `LLM_MODEL`           | LLM model to use        | `gpt-4`                     |
+| `OLLAMA_MODEL`        | Ollama model to use     | `llama3.2:latest`           |
+| `OLLAMA_API_BASE_URL` | Ollama API base URL     | `http://localhost:11434/v1` |
 | `LLM_MAX_TOKENS`      | Maximum tokens for LLM  | `1000`                      |
 | `LLM_TEMPERATURE`     | LLM temperature         | `0.3`                       |
 | `SECRET_KEY`          | Secret key for sessions | Auto-generated              |
@@ -170,17 +168,26 @@ sudo ./deploy/deploy.sh
    export GITHUB_TOKEN=your_token_here
    ```
 
-### LLM Service Setup
+### Using Ollama (Local LLM)
 
-1. Get an API key from your preferred LLM provider:
+The application now uses Ollama by default for LLM processing:
 
-   - OpenAI: https://platform.openai.com/api-keys
-   - Anthropic: https://console.anthropic.com/
-   - Other compatible providers
+1. Install Ollama: https://ollama.com/download
 
-2. Set the API key as an environment variable:
+2. Pull the llama3.2 model:
    ```bash
-   export LLM_API_KEY=your_api_key_here
+   ollama pull llama3.2:latest
+   ```
+
+3. Start the Ollama service:
+   ```bash
+   ollama serve
+   ```
+
+4. Set the appropriate environment variables (optional, as defaults are provided):
+   ```bash
+   export OLLAMA_MODEL=llama3.2:latest
+   # OLLAMA_API_BASE_URL defaults to http://localhost:11434/v1
    ```
 
 ## 📚 Usage
@@ -379,7 +386,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🙏 Acknowledgments
 
 - [GitHub API](https://docs.github.com/en/rest) for providing excellent developer tools
-- [OpenAI](https://openai.com/) for the powerful LLM capabilities
+- [Ollama](https://ollama.com/) for the local LLM capabilities
 - [FastAPI](https://fastapi.tiangolo.com/) for the amazing web framework
 - [Chart.js](https://www.chartjs.org/) for the data visualization library
 

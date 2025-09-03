@@ -23,7 +23,7 @@ dependencies = [
     "requests",
     "python-dotenv",
     "pydantic",
-    "openai",
+    "openai",  # Still needed for Ollama compatibility (OpenAI client works with Ollama API)
     "jinja2",
     "aiofiles",
     "pydantic-settings>=2.10.1",
