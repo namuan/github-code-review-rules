@@ -1,14 +1,12 @@
-#!/usr/bin/env python3
-"""Performance testing script for GitHub PR Rules Analyzer."""
-
 import argparse
 import asyncio
-import random
+import secrets
 import statistics
 import time
 from dataclasses import dataclass
 from typing import Any
 
+import aiofiles
 import aiohttp
 
 
@@ -28,6 +26,14 @@ class PerformanceTester:
     """Performance testing class."""
 
     def __init__(self, base_url: str, max_concurrent: int = 10) -> None:
+        """Initialize the PerformanceTester.
+
+        Args:
+        ----
+            base_url: The base URL for the API endpoints
+            max_concurrent: Maximum number of concurrent requests
+
+        """
         self.base_url = base_url.rstrip("/")
         self.max_concurrent = max_concurrent
         self.results: list[TestResult] = []
@@ -56,8 +62,14 @@ class PerformanceTester:
                     return TestResult(endpoint, method, response.status, response_time, response_size)
             else:
                 return TestResult(endpoint, method, 0, 0, 0, f"Unsupported method: {method}")
-        except Exception as e:
-            return TestResult(endpoint, method, 0, 0, 0, str(e))
+        except aiohttp.ClientError as e:
+            return TestResult(endpoint, method, 0, 0, 0, f"Client error: {e!s}")
+        except TimeoutError as e:
+            return TestResult(endpoint, method, 0, 0, 0, f"Timeout error: {e!s}")
+        except aiohttp.ClientResponseError as e:
+            return TestResult(endpoint, method, e.status, 0, 0, f"Response error: {e!s}")
+        except aiohttp.ClientConnectorError as e:
+            return TestResult(endpoint, method, 0, 0, 0, f"Connection error: {e!s}")
 
     async def run_concurrent_test(
         self,
@@ -87,7 +99,7 @@ class PerformanceTester:
 
             while remaining_requests > 0:
                 # Randomly select an endpoint
-                endpoint_config = random.choice(endpoints)
+                endpoint_config = secrets.choice(endpoints)
                 endpoint = endpoint_config["endpoint"]
                 method = endpoint_config.get("method", "GET")
                 data = endpoint_config.get("data")
@@ -191,7 +203,7 @@ class PerformanceTester:
 
 
 async def main() -> None:
-    """Main function."""
+    """Run main function."""
     parser = argparse.ArgumentParser(description="Performance test GitHub PR Rules Analyzer")
     parser.add_argument("--url", default="http://localhost:8000", help="Base URL of the application")
     parser.add_argument("--concurrent", type=int, default=10, help="Maximum concurrent requests")
@@ -234,8 +246,8 @@ async def main() -> None:
 
     # Save results if output file specified
     if args.output:
-        with open(args.output, "w") as f:
-            f.write(report)
+        async with aiofiles.open(args.output, "w") as f:
+            await f.write(report)
 
 
 if __name__ == "__main__":

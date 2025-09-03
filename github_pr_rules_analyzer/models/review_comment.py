@@ -1,6 +1,6 @@
 """Review Comment data model."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import Column, DateTime, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import relationship
@@ -114,7 +114,7 @@ class ReviewComment(Base):
         self.updated_at = datetime.fromisoformat(github_data["updated_at"]) if github_data.get("updated_at") else None
         self.html_url = github_data["html_url"]
         self.diff_hunk = github_data.get("diff_hunk")
-        self.updated_at_timestamp = datetime.utcnow()
+        self.updated_at_timestamp = datetime.now(UTC)
 
     def get_code_snippets(self):
         """Get all code snippets associated with this comment."""

@@ -113,7 +113,7 @@ def check_database_connection() -> bool:
             connection.execute("SELECT 1")
         return True
     except Exception as e:
-        logging.exception(f"Database connection check failed: {e}")
+        logging.exception("Database connection check failed: %s", str(e))
         return False
 
 
@@ -177,7 +177,7 @@ class DatabaseManager:
             return False
 
         except Exception as e:
-            self.logger.exception(f"Database initialization failed: {e}")
+            self.logger.exception("Database initialization failed: %s", str(e))
             return False
 
     def reset_database(self) -> bool:
@@ -201,7 +201,7 @@ class DatabaseManager:
             return True
 
         except Exception as e:
-            self.logger.exception(f"Database reset failed: {e}")
+            self.logger.exception("Database reset failed: %s", str(e))
             return False
 
     def backup_database(self, backup_path: Path) -> bool:
@@ -235,9 +235,9 @@ class DatabaseManager:
 
             shutil.copy2(db_path, backup_path)
 
-            self.logger.info(f"Database backup created at {backup_path}")
+            self.logger.info("Database backup created at %s", backup_path)
             return True
 
         except Exception as e:
-            self.logger.exception(f"Database backup failed: {e}")
+            self.logger.exception("Database backup failed: %s", str(e))
             return False

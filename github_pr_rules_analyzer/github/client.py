@@ -51,7 +51,7 @@ class GitHubAPIClient:
             if self.rate_limit_reset:
                 wait_time = self.rate_limit_reset - time.time()
                 if wait_time > 0:
-                    logger.info(f"Rate limit exceeded, waiting {wait_time:.1f} seconds")
+                    logger.info("Rate limit exceeded, waiting %.1f seconds", wait_time)
                     time.sleep(wait_time + 1)  # Add 1 second buffer
             else:
                 # Default wait if reset time not available
@@ -90,7 +90,7 @@ class GitHubAPIClient:
         if not url.startswith(("http://", "https://")):
             url = urljoin(self.base_url, url.lstrip("/"))
 
-        logger.debug(f"Making {method} request to {url}")
+        logger.debug("Making %s request to %s", method, url)
 
         try:
             response = self.session.request(method, url, **kwargs)
@@ -114,7 +114,7 @@ class GitHubAPIClient:
             return response
 
         except requests.RequestException as e:
-            logger.exception(f"Request failed: {e}")
+            logger.exception("Request failed: %s", str(e))
             raise
 
     def _get_paginated_results(self, url: str, params: dict | None = None) -> list[dict]:
@@ -344,7 +344,7 @@ class GitHubAPIClient:
             }
 
         except Exception as e:
-            logger.exception(f"Error getting repository info for {owner}/{repo}: {e}")
+            logger.exception("Error getting repository info for %s/%s: %s", owner, repo, str(e))
             raise
 
     def validate_repository_access(self, owner: str, repo: str) -> bool:
@@ -364,7 +364,7 @@ class GitHubAPIClient:
             self.get_repository(owner, repo)
             return True
         except Exception as e:
-            logger.exception(f"Repository access validation failed for {owner}/{repo}: {e}")
+            logger.exception("Repository access validation failed for %s/%s: %s", owner, repo, str(e))
             return False
 
     def get_rate_limit_status(self) -> dict:
@@ -392,5 +392,5 @@ class GitHubAPIClient:
             response = self._make_request("GET", "/user")
             return response.status_code == 200
         except Exception as e:
-            logger.exception(f"Connection test failed: {e}")
+            logger.exception("Connection test failed: %s", str(e))
             return False

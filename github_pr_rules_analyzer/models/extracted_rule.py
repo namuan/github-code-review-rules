@@ -1,6 +1,6 @@
 """Extracted Rule data model."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import relationship
@@ -28,8 +28,13 @@ class ExtractedRule(Base):
     prompt_used = Column(Text)
     response_raw = Column(Text)
     is_valid = Column(Boolean, default=True, index=True)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(UTC), nullable=False)
+    updated_at = Column(
+        DateTime,
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+        nullable=False,
+    )
 
     # Relationships
     review_comment = relationship("ReviewComment", back_populates="extracted_rules")
@@ -121,17 +126,17 @@ class ExtractedRule(Base):
         self.llm_model = llm_model
         self.prompt_used = prompt_used
         self.response_raw = response_raw
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(UTC)
 
     def mark_as_valid(self) -> None:
         """Mark rule as valid."""
         self.is_valid = True
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(UTC)
 
     def mark_as_invalid(self) -> None:
         """Mark rule as invalid."""
         self.is_valid = False
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(UTC)
 
     @property
     def has_high_confidence(self):

@@ -1,6 +1,6 @@
 """Data collection service for GitHub pull requests."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from ..github.client import GitHubAPIClient
@@ -43,7 +43,7 @@ class DataCollector:
             Collection results dictionary
 
         """
-        logger.info(f"Starting data collection for {owner}/{repo}")
+        logger.info("Starting data collection for %s/%s", owner, repo)
 
         results = {
             "repository": None,
@@ -52,7 +52,7 @@ class DataCollector:
             "code_snippets": [],
             "comment_threads": [],
             "errors": [],
-            "start_time": datetime.utcnow(),
+            "start_time": datetime.now(UTC),
             "end_time": None,
         }
 
@@ -64,7 +64,7 @@ class DataCollector:
 
             # Get repository info
             repo_info = self.github_client.get_repository_info(owner, repo)
-            logger.info(f"Repository info: {repo_info['info']['full_name']}")
+            logger.info("Repository info: %s", repo_info["info"]["full_name"])
 
             # Create or update repository
             repository = self._upsert_repository(repo_info["info"])
@@ -72,7 +72,7 @@ class DataCollector:
 
             # Get closed pull requests
             closed_prs = self.github_client.get_pull_requests(owner, repo, state="closed")
-            logger.info(f"Found {len(closed_prs)} closed pull requests")
+            logger.info("Found %d closed pull requests", len(closed_prs))
 
             # Collect data for each pull request
             for pr_data in closed_prs:
@@ -90,17 +90,17 @@ class DataCollector:
                     logger.exception(error_msg)
                     results["errors"].append(error_msg)
 
-            results["end_time"] = datetime.utcnow()
+            results["end_time"] = datetime.now(UTC)
 
             # Log summary
             duration = (results["end_time"] - results["start_time"]).total_seconds()
-            logger.info(f"Data collection completed in {duration:.2f} seconds")
-            logger.info(
-                f"Collected: {len(results['pull_requests'])} PRs, "
-                f"{len(results['review_comments'])} comments, "
-                f"{len(results['code_snippets'])} snippets, "
-                f"{len(results['comment_threads'])} threads",
-            )
+            logger.info("Data collection completed in %.2f seconds", duration)
+            "Collected: %d PRs, %d comments, %d snippets, %d threads" % (
+                      len(results["pull_requests"]),
+                      len(results["review_comments"]),
+                      len(results["code_snippets"]),
+                      len(results["comment_threads"]),
+                  )
 
             return results
 
@@ -108,7 +108,7 @@ class DataCollector:
             error_msg = f"Error collecting repository data: {e!s}"
             logger.exception(error_msg)
             results["errors"].append(error_msg)
-            results["end_time"] = datetime.utcnow()
+            results["end_time"] = datetime.now(UTC)
             return results
 
     def _upsert_repository(self, repo_data: dict[str, Any]) -> Repository:
@@ -135,12 +135,12 @@ class DataCollector:
         if existing_repo:
             # Update existing repository
             existing_repo.update_from_github_data(repo_data)
-            logger.info(f"Updated repository: {repo_data['full_name']}")
+            logger.info("Updated repository: %s", repo_data["full_name"])
         else:
             # Create new repository
             existing_repo = Repository.from_github_data(repo_data)
             self.session.add(existing_repo)
-            logger.info(f"Created repository: {repo_data['full_name']}")
+            logger.info("Created repository: %s", repo_data["full_name"])
 
         self.session.commit()
         return existing_repo
@@ -158,7 +158,7 @@ class DataCollector:
             Collection results for the pull request
 
         """
-        logger.info(f"Collecting data for PR #{pr_data['number']}: {pr_data['title']}")
+        logger.info("Collecting data for PR #%d: %s", pr_data["number"], pr_data["title"])
 
         results = {
             "pull_request": None,
@@ -180,7 +180,7 @@ class DataCollector:
                 pr_data["number"],
             )
 
-            logger.info(f"Found {len(all_comments)} comments for PR #{pr_data['number']}")
+            logger.info("Found %d comments for PR #%d", len(all_comments), pr_data["number"])
 
             # Process each comment
             for comment_data in all_comments:
@@ -228,12 +228,12 @@ class DataCollector:
         if existing_pr:
             # Update existing pull request
             existing_pr.update_from_github_data(pr_data)
-            logger.info(f"Updated PR #{pr_data['number']}")
+            logger.info("Updated PR #%d", pr_data["number"])
         else:
             # Create new pull request
             existing_pr = PullRequest.from_github_data(pr_data, repository_id)
             self.session.add(existing_pr)
-            logger.info(f"Created PR #{pr_data['number']}")
+            logger.info("Created PR #%d", pr_data["number"])
 
         self.session.commit()
         return existing_pr
@@ -275,7 +275,7 @@ class DataCollector:
             return results
 
         except Exception as e:
-            logger.exception(f"Error processing comment: {e!s}")
+            logger.exception("Error processing comment: %s", str(e))
             return results
 
     def _upsert_review_comment(self, comment_data: dict[str, Any], pull_request_id: int) -> ReviewComment:
@@ -303,12 +303,12 @@ class DataCollector:
         if existing_comment:
             # Update existing comment
             existing_comment.update_from_github_data(comment_data)
-            logger.debug(f"Updated comment {comment_data['id']}")
+            logger.debug("Updated comment %d", comment_data["id"])
         else:
             # Create new comment
             existing_comment = ReviewComment.from_github_data(comment_data, pull_request_id)
             self.session.add(existing_comment)
-            logger.debug(f"Created comment {comment_data['id']}")
+            logger.debug("Created comment %d", comment_data["id"])
 
         self.session.commit()
         return existing_comment
@@ -391,7 +391,7 @@ class DataCollector:
                 self.session.commit()
 
         except Exception as e:
-            logger.exception(f"Error extracting code snippets: {e!s}")
+            logger.exception("Error extracting code snippets: %s", str(e))
 
         return snippets
 
@@ -485,7 +485,7 @@ class DataCollector:
             return thread
 
         except Exception as e:
-            logger.exception(f"Error creating comment thread: {e!s}")
+            logger.exception("Error creating comment thread: %s", str(e))
             return None
 
     def get_collection_status(self) -> dict[str, Any]:
@@ -525,7 +525,7 @@ class DataCollector:
             }
 
         except Exception as e:
-            logger.exception(f"Error getting collection status: {e!s}")
+            logger.exception("Error getting collection status: %s", str(e))
             return {"error": str(e)}
 
     def cleanup_old_data(self, days: int = 30) -> dict[str, int]:
@@ -542,7 +542,7 @@ class DataCollector:
         """
         from datetime import timedelta
 
-        cutoff_date = datetime.utcnow() - timedelta(days=days)
+        cutoff_date = datetime.now(UTC) - timedelta(days=days)
 
         results = {}
 
@@ -599,11 +599,11 @@ class DataCollector:
 
             self.session.commit()
 
-            logger.info(f"Cleaned up old data: {results}")
+            logger.info("Cleaned up old data: %s", results)
 
             return results
 
         except Exception as e:
-            logger.exception(f"Error cleaning up old data: {e!s}")
+            logger.exception("Error cleaning up old data: %s", str(e))
             self.session.rollback()
             return {"error": str(e)}

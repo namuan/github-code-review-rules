@@ -1,6 +1,6 @@
 """Comment Thread data model."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Index, Integer, String
 from sqlalchemy.orm import relationship
@@ -24,8 +24,13 @@ class CommentThread(Base):
     thread_path = Column(String(500), nullable=False, index=True)
     thread_position = Column(Integer, nullable=False)
     is_resolved = Column(Boolean, default=False, index=True)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(UTC), nullable=False)
+    updated_at = Column(
+        DateTime,
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+        nullable=False,
+    )
 
     # Relationships
     pull_request = relationship("PullRequest", back_populates="comment_threads")
@@ -64,12 +69,12 @@ class CommentThread(Base):
     def resolve(self) -> None:
         """Mark thread as resolved."""
         self.is_resolved = True
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(UTC)
 
     def unresolve(self) -> None:
         """Mark thread as unresolved."""
         self.is_resolved = False
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(UTC)
 
     @property
     def is_active(self) -> bool:

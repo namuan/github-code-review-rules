@@ -65,7 +65,7 @@ class LLMService:
             return self._parse_llm_response(response, comment_data)
 
         except Exception as e:
-            logger.exception(f"Error extracting rule with LLM: {e}")
+            logger.exception("Error extracting rule with LLM: %s", str(e))
             # Fallback to rule-based extraction
             return self._fallback_rule_extraction(comment_data)
 
@@ -89,7 +89,7 @@ class LLMService:
                 if rule_data:
                     results.append(rule_data)
             except Exception as e:
-                logger.exception(f"Error processing comment {comment_data.get('id', 'unknown')}: {e}")
+                logger.exception("Error processing comment %s: %s", comment_data.get("id", "unknown"), str(e))
                 continue
 
         return results
@@ -164,7 +164,7 @@ If no specific coding rule can be extracted, return null.
 
         for attempt in range(max_retries):
             try:
-                logger.debug(f"Calling LLM (attempt {attempt + 1}/{max_retries})")
+                logger.debug("Calling LLM (attempt %d/%d)", attempt + 1, max_retries)
 
                 response = self.client.chat.completions.create(
                     model=self.model,
@@ -186,21 +186,21 @@ If no specific coding rule can be extracted, return null.
                 try:
                     json.loads(response_text)
                 except json.JSONDecodeError:
-                    logger.warning(f"LLM response is not valid JSON: {response_text}")
+                    logger.warning("LLM response is not valid JSON: %s", response_text)
                     msg = "Invalid JSON response from LLM"
-                    raise ValueError(msg)
+                    raise ValueError(msg) from e
 
                 return response_text
 
             except Exception as e:
-                logger.warning(f"LLM API call failed (attempt {attempt + 1}): {e}")
+                logger.warning("LLM API call failed (attempt %d): %s", attempt + 1, e)
 
                 if attempt == max_retries - 1:
                     raise
 
                 # Wait before retry (exponential backoff)
                 wait_time = (2**attempt) * 1
-                logger.info(f"Waiting {wait_time} seconds before retry...")
+                logger.info("Waiting %d seconds before retry...", wait_time)
                 time.sleep(wait_time)
 
         msg = "Max retries exceeded for LLM API call"
@@ -226,7 +226,7 @@ If no specific coding rule can be extracted, return null.
             required_fields = ["rule_text", "rule_category", "rule_severity"]
             for field in required_fields:
                 if field not in response_data or not response_data[field]:
-                    logger.warning(f"Missing required field in LLM response: {field}")
+                    logger.warning("Missing required field in LLM response: %s", field)
                     return None
 
             # Clean up rule text
@@ -263,10 +263,10 @@ If no specific coding rule can be extracted, return null.
             }
 
         except json.JSONDecodeError as e:
-            logger.exception(f"Failed to parse LLM response as JSON: {e}")
+            logger.exception("Failed to parse LLM response as JSON: %s", str(e))
             return None
         except Exception as e:
-            logger.exception(f"Error parsing LLM response: {e}")
+            logger.exception("Error parsing LLM response: %s", str(e))
             return None
 
     def _normalize_category(self, category: str) -> str:
@@ -583,7 +583,7 @@ If no specific coding rule can be extracted, return null.
             return response.choices[0].message.content is not None
 
         except Exception as e:
-            logger.exception(f"LLM connection test failed: {e}")
+            logger.exception("LLM connection test failed: %s", str(e))
             return False
 
     def get_model_info(self) -> dict[str, Any]:
@@ -632,5 +632,5 @@ If no specific coding rule can be extracted, return null.
             }
 
         except Exception as e:
-            logger.exception(f"Error getting usage stats: {e}")
+            logger.exception("Error getting usage stats: %s", str(e))
             return {"error": str(e)}

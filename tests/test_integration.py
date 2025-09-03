@@ -778,7 +778,7 @@ class TestIntegration:
             try:
                 response = client.get("/api/v1/dashboard")
                 results.append(response.status_code)
-            except Exception as e:
+            except (RuntimeError, ConnectionError) as e:
                 errors.append(str(e))
 
         # Create multiple threads making concurrent requests
@@ -805,7 +805,7 @@ class TestIntegration:
                 }
                 response = client.post("/api/v1/repositories", json=repo_data)
                 results.append(response.status_code)
-            except Exception as e:
+            except (RuntimeError, ConnectionError) as e:
                 errors.append(str(e))
 
         threads = []

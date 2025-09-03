@@ -2,7 +2,7 @@
 
 import queue
 import threading
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from ..models import CodeSnippet, CommentThread, ExtractedRule, ReviewComment, RuleStatistics
@@ -41,7 +41,7 @@ class DataProcessor:
 
     def start_workers(self) -> None:
         """Start worker threads for processing."""
-        logger.info(f"Starting {self.max_workers} worker threads")
+        logger.info("Starting %d worker threads", self.max_workers)
 
         for i in range(self.max_workers):
             worker = threading.Thread(
@@ -81,7 +81,7 @@ class DataProcessor:
                 try:
                     self._process_task(task)
                 except Exception as e:
-                    logger.exception(f"Error processing task: {e}")
+                    logger.exception("Error processing task: %s", str(e))
                     with self.lock:
                         self.error_count += 1
 
@@ -91,7 +91,7 @@ class DataProcessor:
             except queue.Empty:
                 continue
             except Exception as e:
-                logger.exception(f"Worker error: {e}")
+                logger.exception("Worker error: %s", str(e))
 
     def _process_task(self, task: dict[str, Any]) -> None:
         """Process a single task.
@@ -114,7 +114,7 @@ class DataProcessor:
         elif task_type == "update_statistics":
             self._update_statistics(task["data"])
         else:
-            logger.error(f"Unknown task type: {task_type}")
+            logger.error("Unknown task type: %s", task_type)
 
     def add_review_comment_task(self, comment_data: dict[str, Any]) -> bool:
         """Add review comment processing task.
@@ -136,7 +136,7 @@ class DataProcessor:
             self.task_queue.put(task)
             return True
         except Exception as e:
-            logger.exception(f"Error adding review comment task: {e}")
+            logger.exception("Error adding review comment task: %s", str(e))
             return False
 
     def add_code_snippet_task(self, snippet_data: dict[str, Any]) -> bool:
@@ -159,7 +159,7 @@ class DataProcessor:
             self.task_queue.put(task)
             return True
         except Exception as e:
-            logger.exception(f"Error adding code snippet task: {e}")
+            logger.exception("Error adding code snippet task: %s", str(e))
             return False
 
     def add_comment_thread_task(self, thread_data: dict[str, Any]) -> bool:
@@ -182,7 +182,7 @@ class DataProcessor:
             self.task_queue.put(task)
             return True
         except Exception as e:
-            logger.exception(f"Error adding comment thread task: {e}")
+            logger.exception("Error adding comment thread task: %s", str(e))
             return False
 
     def add_rule_extraction_task(self, rule_data: dict[str, Any]) -> bool:
@@ -205,7 +205,7 @@ class DataProcessor:
             self.task_queue.put(task)
             return True
         except Exception as e:
-            logger.exception(f"Error adding rule extraction task: {e}")
+            logger.exception("Error adding rule extraction task: %s", str(e))
             return False
 
     def add_statistics_update_task(self, stats_data: dict[str, Any]) -> bool:
@@ -228,7 +228,7 @@ class DataProcessor:
             self.task_queue.put(task)
             return True
         except Exception as e:
-            logger.exception(f"Error adding statistics update task: {e}")
+            logger.exception("Error adding statistics update task: %s", str(e))
             return False
 
     def _process_review_comment(self, comment_data: dict[str, Any]) -> None:
@@ -242,7 +242,7 @@ class DataProcessor:
         try:
             # Validate comment data
             if not self._validate_review_comment(comment_data):
-                logger.warning(f"Invalid review comment data: {comment_data}")
+                logger.warning("Invalid review comment data: %s", comment_data)
                 return
 
             # Create or update review comment
@@ -261,7 +261,7 @@ class DataProcessor:
                 self.processed_count += 1
 
         except Exception as e:
-            logger.exception(f"Error processing review comment: {e}")
+            logger.exception("Error processing review comment: %s", str(e))
             raise
 
     def _process_code_snippet(self, snippet_data: dict[str, Any]) -> None:
@@ -275,7 +275,7 @@ class DataProcessor:
         try:
             # Validate snippet data
             if not self._validate_code_snippet(snippet_data):
-                logger.warning(f"Invalid code snippet data: {snippet_data}")
+                logger.warning("Invalid code snippet data: %s", snippet_data)
                 return
 
             # Create or update code snippet
@@ -285,7 +285,7 @@ class DataProcessor:
                 self.processed_count += 1
 
         except Exception as e:
-            logger.exception(f"Error processing code snippet: {e}")
+            logger.exception("Error processing code snippet: %s", str(e))
             raise
 
     def _process_comment_thread(self, thread_data: dict[str, Any]) -> None:
@@ -299,7 +299,7 @@ class DataProcessor:
         try:
             # Validate thread data
             if not self._validate_comment_thread(thread_data):
-                logger.warning(f"Invalid comment thread data: {thread_data}")
+                logger.warning("Invalid comment thread data: %s", thread_data)
                 return
 
             # Create or update comment thread
@@ -309,7 +309,7 @@ class DataProcessor:
                 self.processed_count += 1
 
         except Exception as e:
-            logger.exception(f"Error processing comment thread: {e}")
+            logger.exception("Error processing comment thread: %s", str(e))
             raise
 
     def _extract_rule(self, rule_data: dict[str, Any]) -> None:
@@ -352,7 +352,7 @@ class DataProcessor:
                 self.processed_count += 1
 
         except Exception as e:
-            logger.exception(f"Error extracting rule: {e}")
+            logger.exception("Error extracting rule: %s", str(e))
             raise
 
     def _update_statistics(self, stats_data: dict[str, Any]) -> None:
@@ -400,7 +400,7 @@ class DataProcessor:
                 self.processed_count += 1
 
         except Exception as e:
-            logger.exception(f"Error updating statistics: {e}")
+            logger.exception("Error updating statistics: %s", str(e))
             raise
 
     def _validate_review_comment(self, comment_data: dict[str, Any]) -> bool:
@@ -484,12 +484,12 @@ class DataProcessor:
         if existing_comment:
             # Update existing comment
             existing_comment.update_from_github_data(comment_data)
-            logger.debug(f"Updated comment {comment_data['id']}")
+            logger.debug("Updated comment %d", comment_data["id"])
         else:
             # Create new comment
             existing_comment = ReviewComment.from_github_data(comment_data, comment_data.get("pull_request_id"))
             self.session.add(existing_comment)
-            logger.debug(f"Created comment {comment_data['id']}")
+            logger.debug("Created comment %d", comment_data["id"])
 
         self.session.commit()
         return existing_comment
@@ -518,7 +518,7 @@ class DataProcessor:
             existing_snippet.line_end = snippet_data["line_end"]
             existing_snippet.content = snippet_data["content"]
             existing_snippet.language = snippet_data.get("language")
-            logger.debug(f"Updated snippet {snippet_data['id']}")
+            logger.debug("Updated snippet %d", snippet_data["id"])
         else:
             # Create new snippet
             from ..models import ReviewComment
@@ -541,7 +541,7 @@ class DataProcessor:
                     snippet_data.get("language"),
                 )
                 self.session.add(snippet)
-                logger.debug(f"Created snippet {snippet_data['id']}")
+                logger.debug("Created snippet %d", snippet_data["id"])
 
         self.session.commit()
 
@@ -567,7 +567,7 @@ class DataProcessor:
             existing_thread.thread_path = thread_data["thread_path"]
             existing_thread.thread_position = thread_data["thread_position"]
             existing_thread.is_resolved = thread_data.get("is_resolved", False)
-            logger.debug(f"Updated thread {thread_data['id']}")
+            logger.debug("Updated thread %d", thread_data["id"])
         else:
             # Create new thread
             from ..models import ReviewComment
@@ -590,7 +590,7 @@ class DataProcessor:
                     is_resolved=thread_data.get("is_resolved", False),
                 )
                 self.session.add(thread)
-                logger.debug(f"Created thread {thread_data['id']}")
+                logger.debug("Created thread %d", thread_data["id"])
 
         self.session.commit()
 
@@ -665,8 +665,8 @@ class DataProcessor:
         # Look for imperative sentences
         sentences = re.split(r"[.!?]+", text)
         for sentence in sentences:
-            sentence = sentence.strip()
-            if sentence and len(sentence) > 10:  # Reasonable length
+            stripped_sentence = sentence.strip()
+            if stripped_sentence and len(stripped_sentence) > 10:  # Reasonable length
                 # Check if it starts with imperative verb
                 imperative_verbs = [
                     "use",
@@ -837,7 +837,7 @@ class DataProcessor:
             "total": len(items),
             "success": 0,
             "errors": 0,
-            "start_time": datetime.utcnow(),
+            "start_time": datetime.now(UTC),
             "end_time": None,
         }
 
@@ -851,14 +851,14 @@ class DataProcessor:
             self.task_queue.join()
 
             results["success"] = results["total"] - results["errors"]
-            results["end_time"] = datetime.utcnow()
+            results["end_time"] = datetime.now(UTC)
 
             return results
 
         except Exception as e:
-            logger.exception(f"Error processing batch: {e}")
+            logger.exception("Error processing batch: %s", str(e))
             results["errors"] = results["total"]
-            results["end_time"] = datetime.utcnow()
+            results["end_time"] = datetime.now(UTC)
             return results
 
     def process_review_comments_batch(self, comments: list[dict[str, Any]]) -> dict[str, Any]:

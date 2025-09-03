@@ -12,7 +12,7 @@ def setup_logging(
     level: str | None = None,
     format_string: str | None = None,
 ) -> logging.Logger:
-    """Setup logging configuration.
+    """Set up logging configuration.
 
     Args:
     ----

@@ -1,6 +1,6 @@
 """Pull Request data model."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import Column, DateTime, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import relationship
@@ -116,7 +116,7 @@ class PullRequest(Base):
         self.html_url = github_data["html_url"]
         self.diff_url = github_data.get("diff_url")
         self.patch_url = github_data.get("patch_url")
-        self.updated_at_timestamp = datetime.utcnow()
+        self.updated_at_timestamp = datetime.now(UTC)
 
     @property
     def is_closed(self):

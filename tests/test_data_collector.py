@@ -1,6 +1,6 @@
 """Unit tests for data collector service."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 from unittest.mock import Mock, patch
 
 from github_pr_rules_analyzer.services.data_collector import DataCollector
@@ -375,7 +375,7 @@ class TestDataCollector:
 
         from datetime import timedelta
 
-        datetime.utcnow() - timedelta(days=30)
+        datetime.now(UTC) - timedelta(days=30)
 
         result = self.collector.cleanup_old_data(30)
 
@@ -395,7 +395,7 @@ class TestDataCollector:
 
         from datetime import timedelta
 
-        datetime.utcnow() - timedelta(days=30)
+        datetime.now(UTC) - timedelta(days=30)
 
         result = self.collector.cleanup_old_data(30)
 

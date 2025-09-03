@@ -1,6 +1,6 @@
 """FastAPI routes for the GitHub PR Rules Analyzer."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query
@@ -18,7 +18,7 @@ router = APIRouter()
 
 
 # Dependency to get database session
-def get_db():
+def get_db() -> Any:
     """Get database session."""
     db = get_session_local()
     try:
@@ -28,7 +28,7 @@ def get_db():
 
 
 # Dependency to get services
-def get_services():
+def get_services() -> dict[str, Any]:
     """Get service instances."""
     return {
         "data_collector": DataCollector(),
@@ -38,7 +38,7 @@ def get_services():
 
 
 @router.get("/")
-async def root():
+async def root() -> dict[str, Any]:
     """Root endpoint."""
     return {
         "message": "GitHub PR Rules Analyzer API",
@@ -58,7 +58,7 @@ async def get_repositories(
     skip: Annotated[int, Query(ge=0)] = 0,
     limit: Annotated[int, Query(ge=1, le=1000)] = 100,
     db: Session = Depends(get_db),
-):
+) -> dict[str, Any]:
     """Get all repositories."""
     try:
         repositories = db.query(Repository).offset(skip).limit(limit).all()
@@ -71,8 +71,8 @@ async def get_repositories(
             "limit": limit,
         }
     except Exception as e:
-        logger.exception(f"Error getting repositories: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        logger.exception("Error getting repositories: %s", e)
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.post("/api/v1/repositories")
@@ -80,7 +80,7 @@ async def add_repository(
     repo_data: dict[str, Any],
     services: Annotated[dict[str, Any], Depends(get_services)],
     db: Annotated[Session, Depends(get_db)],
-):
+) -> dict[str, Any]:
     """Add a new repository for monitoring."""
     try:
         # Validate repository data
@@ -127,8 +127,8 @@ async def add_repository(
     except HTTPException:
         raise
     except Exception as e:
-        logger.exception(f"Error adding repository: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        logger.exception("Error adding repository: %s", e)
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.delete("/api/v1/repositories/{repo_id}")
@@ -151,7 +151,7 @@ async def delete_repository(
     except HTTPException:
         raise
     except Exception as e:
-        logger.exception(f"Error deleting repository: {e}")
+        logger.exception("Error deleting repository: %s", str(e))
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
@@ -204,7 +204,7 @@ async def sync_repository(
     except HTTPException:
         raise
     except Exception as e:
-        logger.exception(f"Error syncing repository: {e}")
+        logger.exception("Error syncing repository: %s", str(e))
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
@@ -219,11 +219,11 @@ async def get_sync_status(
 
         return {
             "processing_stats": stats,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
     except Exception as e:
-        logger.exception(f"Error getting sync status: {e}")
+        logger.exception("Error getting sync status: %s", str(e))
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
@@ -300,7 +300,7 @@ async def extract_rules(
     except HTTPException:
         raise
     except Exception as e:
-        logger.exception(f"Error extracting rules: {e}")
+        logger.exception("Error extracting rules: %s", str(e))
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
@@ -348,7 +348,7 @@ async def get_rules(
         }
 
     except Exception as e:
-        logger.exception(f"Error getting rules: {e}")
+        logger.exception("Error getting rules: %s", str(e))
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
@@ -368,7 +368,7 @@ async def get_rule(
     except HTTPException:
         raise
     except Exception as e:
-        logger.exception(f"Error getting rule: {e}")
+        logger.exception("Error getting rule: %s", str(e))
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
@@ -409,7 +409,7 @@ async def search_rules(
         }
 
     except Exception as e:
-        logger.exception(f"Error searching rules: {e}")
+        logger.exception("Error searching rules: %s", str(e))
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
@@ -423,7 +423,7 @@ async def get_rule_categories(db: Annotated[Session, Depends(get_db)]):
             "categories": [cat[0] for cat in categories if cat[0]],
         }
     except Exception as e:
-        logger.exception(f"Error getting categories: {e}")
+        logger.exception("Error getting categories: %s", str(e))
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
@@ -436,7 +436,7 @@ async def get_rule_severities(db: Annotated[Session, Depends(get_db)]):
             "severities": [sev[0] for sev in severities if sev[0]],
         }
     except Exception as e:
-        logger.exception(f"Error getting severities: {e}")
+        logger.exception("Error getting severities: %s", str(e))
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
@@ -467,33 +467,10 @@ async def get_rule_statistics(
 
         total_rules = query.count()
 
-        # Get category distribution
-        category_stats = {}
-        categories = (
-            db.query(
-                ExtractedRule.rule_category,
-                db.func.count(ExtractedRule.id),
-            )
-            .group_by(ExtractedRule.rule_category)
-            .all()
-        )
-
-        for cat, count in categories:
-            category_stats[cat] = count
+        category_stats = dict(categories)
 
         # Get severity distribution
-        severity_stats = {}
-        severities = (
-            db.query(
-                ExtractedRule.rule_severity,
-                db.func.count(ExtractedRule.id),
-            )
-            .group_by(ExtractedRule.rule_severity)
-            .all()
-        )
-
-        for sev, count in severities:
-            severity_stats[sev] = count
+        severity_stats = dict(severities)
 
         # Get average confidence
         avg_confidence = db.query(db.func.avg(ExtractedRule.confidence_score)).scalar() or 0
@@ -511,7 +488,7 @@ async def get_rule_statistics(
         }
 
     except Exception as e:
-        logger.exception(f"Error getting statistics: {e}")
+        logger.exception("Error getting statistics: %s", str(e))
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
@@ -579,11 +556,11 @@ async def get_dashboard_data(
             },
             "recent_rules": [rule.to_dict() for rule in recent_rules],
             "top_categories": {cat[0]: cat[1] for cat in top_categories},
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
     except Exception as e:
-        logger.exception(f"Error getting dashboard data: {e}")
+        logger.exception("Error getting dashboard data: %s", str(e))
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
@@ -631,7 +608,7 @@ async def get_pull_request(
     except HTTPException:
         raise
     except Exception as e:
-        logger.exception(f"Error getting pull request: {e}")
+        logger.exception("Error getting pull request: %s", str(e))
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
@@ -690,7 +667,7 @@ async def get_repository_rules(
     except HTTPException:
         raise
     except Exception as e:
-        logger.exception(f"Error getting repository rules: {e}")
+        logger.exception("Error getting repository rules: %s", str(e))
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
@@ -785,13 +762,13 @@ async def get_repository_statistics(
                 "total": total_rules,
             },
             "category_distribution": {cat[0]: cat[1] for cat in category_stats},
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
     except HTTPException:
         raise
     except Exception as e:
-        logger.exception(f"Error getting repository statistics: {e}")
+        logger.exception("Error getting repository statistics: %s", str(e))
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
@@ -801,6 +778,6 @@ async def health_check():
     """Health check endpoint."""
     return {
         "status": "healthy",
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
         "version": "1.0.0",
     }

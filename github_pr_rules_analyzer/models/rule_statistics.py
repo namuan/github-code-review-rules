@@ -1,6 +1,6 @@
 """Rule Statistics data model."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import Column, DateTime, Float, ForeignKey, Index, Integer
 from sqlalchemy.orm import relationship
@@ -50,19 +50,20 @@ class RuleStatistics(Base):
     @classmethod
     def from_rule_and_repository(cls, rule, repository):
         """Create rule statistics from rule and repository."""
+        now = datetime.now(UTC)
         return cls(
             rule_id=rule.id,
             repository_id=repository.id,
             occurrence_count=1,
-            first_seen=datetime.utcnow(),
-            last_seen=datetime.utcnow(),
+            first_seen=now,
+            last_seen=now,
             avg_confidence=rule.confidence_score,
         )
 
     def increment_occurrence(self, confidence_score=None) -> None:
         """Increment occurrence count and update timestamps."""
         self.occurrence_count += 1
-        self.last_seen = datetime.utcnow()
+        self.last_seen = datetime.now(UTC)
 
         if confidence_score is not None:
             # Update average confidence
@@ -73,19 +74,19 @@ class RuleStatistics(Base):
                 total_confidence = (self.avg_confidence * (self.occurrence_count - 1)) + confidence_score
                 self.avg_confidence = total_confidence / self.occurrence_count
 
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(UTC)
 
     def update_first_seen(self, timestamp) -> None:
         """Update first seen timestamp if earlier than current."""
         if timestamp < self.first_seen:
             self.first_seen = timestamp
-            self.updated_at = datetime.utcnow()
+            self.updated_at = datetime.now(UTC)
 
     def get_trend(self, days=30) -> str:
         """Get trend information for the rule."""
         from datetime import timedelta
 
-        cutoff_date = datetime.utcnow() - timedelta(days=days)
+        cutoff_date = datetime.now(UTC) - timedelta(days=days)
 
         if self.last_seen < cutoff_date:
             return "inactive"
@@ -122,7 +123,7 @@ class RuleStatistics(Base):
         """Get human-readable age description."""
         from datetime import timedelta
 
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         age = now - self.first_seen
 
         if age < timedelta(days=7):
@@ -139,7 +140,7 @@ class RuleStatistics(Base):
         """Get human-readable recency description."""
         from datetime import timedelta
 
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         age = now - self.last_seen
 
         if age < timedelta(hours=24):

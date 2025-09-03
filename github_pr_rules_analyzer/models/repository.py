@@ -1,6 +1,6 @@
 """Repository data model."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text
 from sqlalchemy.orm import relationship
@@ -95,4 +95,4 @@ class Repository(Base):
         self.created_at = datetime.fromisoformat(github_data["created_at"]) if github_data.get("created_at") else None
         self.updated_at = datetime.fromisoformat(github_data["updated_at"]) if github_data.get("updated_at") else None
         self.language = github_data.get("language")
-        self.updated_at_timestamp = datetime.utcnow()
+        self.updated_at_timestamp = datetime.now(UTC)
