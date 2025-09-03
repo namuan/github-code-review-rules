@@ -24,7 +24,7 @@ class DataProcessor:
 
         """
         self.max_workers = max_workers
-        self.session = get_session_local()
+        self.session = get_session_local()()
         self.task_queue = queue.Queue()
         self.stop_event = threading.Event()
         self.workers = []

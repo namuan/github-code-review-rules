@@ -23,12 +23,57 @@ class DataCollector:
 
         """
         self.github_client = GitHubAPIClient(github_token)
-        self.session = get_session_local()
+        self.session = get_session_local()()
 
     def __del__(self) -> None:
         """Clean up database session."""
         if hasattr(self, "session"):
             self.session.close()
+
+    def validate_repository_access(self, owner: str, repo: str) -> dict[str, Any]:
+        """Validate repository access.
+
+        Args:
+        ----
+            owner: Repository owner
+            repo: Repository name
+
+        Returns:
+        -------
+            Dictionary with success status and message
+
+        """
+        try:
+            if self.github_client.validate_repository_access(owner, repo):
+                return {
+                    "success": True,
+                    "message": "Repository access validated successfully",
+                }
+            return {
+                "success": False,
+                "message": "Cannot access repository. Please check that the repository exists and you have appropriate permissions.",
+            }
+        except Exception as e:
+            logger.exception("Error validating repository access")
+            return {
+                "success": False,
+                "message": f"Error validating repository access: {e!s}",
+            }
+
+    def get_repository_info(self, owner: str, repo: str) -> dict:
+        """Get repository information.
+
+        Args:
+        ----
+            owner: Repository owner
+            repo: Repository name
+
+        Returns:
+        -------
+            Repository information dictionary
+
+        """
+        return self.github_client.get_repository_info(owner, repo)
 
     def collect_repository_data(self, owner: str, repo: str) -> dict[str, Any]:
         """Collect all data for a repository.

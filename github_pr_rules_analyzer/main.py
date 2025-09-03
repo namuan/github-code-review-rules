@@ -8,9 +8,10 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from .api.routes import router as api_router
-from .config import get_settings
-from .utils import get_logger
+from github_pr_rules_analyzer.api.routes import router as api_router
+from github_pr_rules_analyzer.config import get_settings
+from github_pr_rules_analyzer.utils import get_logger
+from github_pr_rules_analyzer.utils.database import create_tables
 
 # Configure logging
 logger = get_logger(__name__)
@@ -22,6 +23,11 @@ async def lifespan(_app: FastAPI) -> None:
     """Application lifespan events."""
     # Startup
     logger.info("Starting GitHub PR Rules Analyzer API")
+
+    # Initialize database
+    logger.info("Creating database tables...")
+    create_tables()
+    logger.info("Database tables created successfully")
 
     # Initialize services if needed
     logger.info("Application startup complete")

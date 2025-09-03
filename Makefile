@@ -39,7 +39,7 @@ test-single: ## Run a single test file (usage: make test-single TEST=test_config
 .PHONY: run
 run: ## Run the application
 	@echo "🚀 Testing code: Running $(PROJECTNAME)"
-	@uv run devboost
+	@uv run github_pr_rules_analyzer/main.py
 
 .PHONY: build
 build: clean-build ## Build wheel file

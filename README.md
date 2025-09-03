@@ -97,7 +97,7 @@ SUM:                            48           1992           1653           8371
 2. **Install dependencies**
 
    ```bash
-   pip install -r requirements.txt
+   make install
    ```
 
 3. **Set environment variables**

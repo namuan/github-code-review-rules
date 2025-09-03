@@ -20,7 +20,7 @@ router = APIRouter()
 # Dependency to get database session
 def get_db() -> Session:
     """Get database session."""
-    db = get_session_local()
+    db = get_session_local()()
     try:
         yield db
     finally:
@@ -44,16 +44,16 @@ async def root() -> dict[str, Any]:
         "message": "GitHub PR Rules Analyzer API",
         "version": "1.0.0",
         "endpoints": {
-            "repositories": "/api/v1/repositories",
-            "rules": "/api/v1/rules",
-            "dashboard": "/api/v1/dashboard",
-            "sync": "/api/v1/sync",
+            "repositories": "/repositories",
+            "rules": "/rules",
+            "dashboard": "/dashboard",
+            "sync": "/sync",
         },
     }
 
 
 # Repository Management Endpoints
-@router.get("/api/v1/repositories")
+@router.get("/repositories")
 async def get_repositories(
     skip: Annotated[int, Query(ge=0)] = 0,
     limit: Annotated[int, Query(ge=1, le=1000)] = 100,
@@ -75,7 +75,7 @@ async def get_repositories(
         raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
-@router.post("/api/v1/repositories")
+@router.post("/repositories")
 async def add_repository(
     repo_data: dict[str, Any],
     services: Annotated[dict[str, Any], Depends(get_services)],
@@ -131,9 +131,9 @@ async def add_repository(
         raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
-@router.delete("/api/v1/repositories/{repo_id}")
+@router.delete("/repositories/{repo_id}")
 async def delete_repository(
-    repo_id: Annotated[int, Path(ge=1)] = ...,
+    repo_id: Annotated[int, Path(ge=1)],
     db: Session = Depends(get_db),
 ) -> dict[str, str]:
     """Delete a repository."""
@@ -156,9 +156,72 @@ async def delete_repository(
 
 
 # Data Collection Endpoints
-@router.post("/api/v1/sync/{repo_id}")
+@router.post("/sync")
+async def sync_all_repositories(
+    services: dict[str, Any] = Depends(get_services),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """Sync all repositories."""
+    try:
+        # Get all repositories
+        repositories = db.query(Repository).all()
+
+        if not repositories:
+            return {
+                "message": "No repositories to sync",
+                "synced_count": 0,
+            }
+
+        # Sync each repository
+        synced_count = 0
+        errors = []
+
+        data_collector = services["data_collector"]
+        data_processor = services["data_processor"]
+
+        for repository in repositories:
+            try:
+                # Collect repository data
+                results = data_collector.collect_repository_data(
+                    repository.owner_login,
+                    repository.name,
+                )
+
+                # Process collected data
+                # Process review comments
+                if results["review_comments"]:
+                    data_processor.process_review_comments_batch(results["review_comments"])
+
+                # Process code snippets
+                if results["code_snippets"]:
+                    data_processor.process_code_snippets_batch(results["code_snippets"])
+
+                # Process comment threads
+                if results["comment_threads"]:
+                    data_processor.process_comment_threads_batch(results["comment_threads"])
+
+                synced_count += 1
+
+            except Exception as e:
+                error_msg = f"Error syncing repository {repository.full_name}: {e!s}"
+                logger.exception(error_msg)
+                errors.append(error_msg)
+
+        return {
+            "message": f"Sync completed for {synced_count} repositories",
+            "synced_count": synced_count,
+            "total_repositories": len(repositories),
+            "errors": errors,
+        }
+
+    except Exception as e:
+        logger.exception("Error syncing all repositories")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
+
+
+@router.post("/sync/{repo_id}")
 async def sync_repository(
-    repo_id: Annotated[int, Path(ge=1)] = ...,
+    repo_id: Annotated[int, Path(ge=1)],
     services: dict[str, Any] = Depends(get_services),
     db: Session = Depends(get_db),
 ) -> dict[str, Any]:
@@ -208,7 +271,7 @@ async def sync_repository(
         raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
-@router.get("/api/v1/sync/status")
+@router.get("/sync/status")
 async def get_sync_status(
     services: Annotated[dict[str, Any], Depends(get_services)],
 ) -> dict[str, Any]:
@@ -228,7 +291,7 @@ async def get_sync_status(
 
 
 # Rule Extraction Endpoints
-@router.post("/api/v1/rules/extract")
+@router.post("/rules/extract")
 async def extract_rules(
     comment_ids: list[int],
     services: Annotated[dict[str, Any], Depends(get_services)],
@@ -305,7 +368,7 @@ async def extract_rules(
 
 
 # Rule Management Endpoints
-@router.get("/api/v1/rules")
+@router.get("/rules")
 async def get_rules(
     skip: Annotated[int, Query(ge=0)] = 0,
     limit: Annotated[int, Query(ge=1, le=1000)] = 100,
@@ -352,9 +415,9 @@ async def get_rules(
         raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
-@router.get("/api/v1/rules/{rule_id}")
+@router.get("/rules/{rule_id}")
 async def get_rule(
-    rule_id: Annotated[int, Path(ge=1)] = ...,
+    rule_id: Annotated[int, Path(ge=1)],
     db: Session = Depends(get_db),
 ) -> dict[str, Any]:
     """Get a specific rule."""
@@ -372,9 +435,9 @@ async def get_rule(
         raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
-@router.get("/api/v1/rules/search")
+@router.get("/rules/search")
 async def search_rules(
-    query: Annotated[str, Query(min_length=1)] = ...,
+    query: Annotated[str, Query(min_length=1)],
     skip: Annotated[int, Query(ge=0)] = 0,
     limit: Annotated[int, Query(ge=1, le=1000)] = 100,
     db: Session = Depends(get_db),
@@ -414,7 +477,7 @@ async def search_rules(
 
 
 # Statistics and Analytics Endpoints
-@router.get("/api/v1/rules/categories")
+@router.get("/rules/categories")
 async def get_rule_categories(db: Annotated[Session, Depends(get_db)]) -> dict[str, list[str]]:
     """Get all rule categories."""
     try:
@@ -427,7 +490,7 @@ async def get_rule_categories(db: Annotated[Session, Depends(get_db)]) -> dict[s
         raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
-@router.get("/api/v1/rules/severities")
+@router.get("/rules/severities")
 async def get_rule_severities(db: Annotated[Session, Depends(get_db)]) -> dict[str, list[str]]:
     """Get all rule severities."""
     try:
@@ -440,7 +503,7 @@ async def get_rule_severities(db: Annotated[Session, Depends(get_db)]) -> dict[s
         raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
-@router.get("/api/v1/rules/statistics")
+@router.get("/rules/statistics")
 async def get_rule_statistics(
     repository_id: Annotated[int | None, Query()] = None,
     category: Annotated[str | None, Query()] = None,
@@ -512,7 +575,7 @@ async def get_rule_statistics(
 
 
 # Dashboard Endpoints
-@router.get("/api/v1/dashboard")
+@router.get("/dashboard")
 async def get_dashboard_data(
     db: Annotated[Session, Depends(get_db)],
 ) -> dict[str, Any]:
@@ -584,9 +647,9 @@ async def get_dashboard_data(
 
 
 # PR Detail Endpoints
-@router.get("/api/v1/pull-requests/{pr_id}")
+@router.get("/pull-requests/{pr_id}")
 async def get_pull_request(
-    pr_id: Annotated[int, Path(ge=1)] = ...,
+    pr_id: Annotated[int, Path(ge=1)],
     db: Session = Depends(get_db),
 ) -> dict[str, Any]:
     """Get pull request details."""
@@ -632,9 +695,9 @@ async def get_pull_request(
 
 
 # Repository-specific Endpoints
-@router.get("/api/v1/repositories/{repo_id}/rules")
+@router.get("/repositories/{repo_id}/rules")
 async def get_repository_rules(
-    repo_id: Annotated[int, Path(ge=1)] = ...,
+    repo_id: Annotated[int, Path(ge=1)],
     skip: Annotated[int, Query(ge=0)] = 0,
     limit: Annotated[int, Query(ge=1, le=1000)] = 100,
     category: Annotated[str | None, Query()] = None,
@@ -690,9 +753,9 @@ async def get_repository_rules(
         raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
-@router.get("/api/v1/repositories/{repo_id}/statistics")
+@router.get("/repositories/{repo_id}/statistics")
 async def get_repository_statistics(
-    repo_id: Annotated[int, Path(ge=1)] = ...,
+    repo_id: Annotated[int, Path(ge=1)],
     db: Session = Depends(get_db),
 ) -> dict[str, Any]:
     """Get statistics for a specific repository."""
@@ -792,7 +855,7 @@ async def get_repository_statistics(
 
 
 # Health Check Endpoint
-@router.get("/api/v1/health")
+@router.get("/health")
 async def health_check() -> dict[str, str]:
     """Health check endpoint."""
     return {

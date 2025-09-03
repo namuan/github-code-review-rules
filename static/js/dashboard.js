@@ -205,16 +205,32 @@ function updateRepositoriesList(data) {
             <div class="repository-info">
                 <h3 class="repository-name">${repo.name}</h3>
                 <div class="repository-meta">
-                    <p>Owner: ${repo.owner}</p>
+                    <p>Owner: ${repo.owner_login}</p>
                     <p>URL: ${repo.html_url}</p>
                 </div>
             </div>
             <div class="repository-actions">
-                <button class="btn btn-primary">Sync</button>
-                <button class="btn btn-danger">Delete</button>
+                <button class="btn btn-primary sync-repo-btn" data-repo-id="${repo.id}">Sync</button>
+                <button class="btn btn-danger delete-repo-btn" data-repo-id="${repo.id}">Delete</button>
             </div>
         `;
             repositoriesListElement.appendChild(repoElement);
+      });
+
+      // Add event listeners for sync buttons
+      document.querySelectorAll(".sync-repo-btn").forEach((button) => {
+            button.addEventListener("click", (e) => {
+                  const repoId = e.target.getAttribute("data-repo-id");
+                  syncRepository(repoId);
+            });
+      });
+
+      // Add event listeners for delete buttons
+      document.querySelectorAll(".delete-repo-btn").forEach((button) => {
+            button.addEventListener("click", (e) => {
+                  const repoId = e.target.getAttribute("data-repo-id");
+                  deleteRepository(repoId);
+            });
       });
 }
 
@@ -268,9 +284,13 @@ function initEventListeners() {
                         name: nameInput.value.trim(),
                   }),
             })
-                  .then((response) => response.json())
-                  .then((data) => {
-                        if (response.ok) {
+                  .then((response) => {
+                        // Store the response status before converting to JSON
+                        const isOk = response.ok;
+                        return response.json().then((data) => ({ data, isOk }));
+                  })
+                  .then(({ data, isOk }) => {
+                        if (isOk) {
                               showSuccessToast("Repository added successfully");
                               ownerInput.value = "";
                               nameInput.value = "";
@@ -287,9 +307,13 @@ function initEventListeners() {
       // Sync all repositories
       document.getElementById("sync-all-btn").addEventListener("click", () => {
             fetch("/api/v1/sync")
-                  .then((response) => response.json())
-                  .then((data) => {
-                        if (response.ok) {
+                  .then((response) => {
+                        // Store the response status before converting to JSON
+                        const isOk = response.ok;
+                        return response.json().then((data) => ({ data, isOk }));
+                  })
+                  .then(({ data, isOk }) => {
+                        if (isOk) {
                               showSuccessToast("Repository sync started");
                               updateSyncStatus();
                         } else {
@@ -311,6 +335,23 @@ function initEventListeners() {
       document.getElementById("stop-sync-btn").addEventListener("click", () => {
             // TODO: Implement stop sync
             showErrorToast("Stop sync not implemented");
+      });
+
+      // Page navigation
+      document.querySelectorAll(".nav-link[data-page]").forEach((link) => {
+            link.addEventListener("click", (e) => {
+                  e.preventDefault();
+                  const page = link.getAttribute("data-page");
+                  switchPage(page);
+            });
+      });
+
+      // View all rules link
+      document.querySelectorAll(".view-all[data-page]").forEach((link) => {
+            link.addEventListener("click", (e) => {
+                  e.preventDefault();
+                  switchPage(link.getAttribute("data-page"));
+            });
       });
 }
 
@@ -335,4 +376,91 @@ function showSuccessToast(message) {
 function toggleLoadingOverlay(show) {
       const overlayElement = document.getElementById("loading-overlay");
       overlayElement.classList.toggle("active", show);
+}
+
+function switchPage(pageName) {
+      // Hide all pages
+      document.querySelectorAll(".page").forEach((page) => {
+            page.classList.remove("active");
+      });
+
+      // Remove active class from all nav links
+      document.querySelectorAll(".nav-link").forEach((link) => {
+            link.classList.remove("active");
+      });
+
+      // Show the selected page
+      const targetPage = document.getElementById(`${pageName}-page`);
+      if (targetPage) {
+            targetPage.classList.add("active");
+
+            // Add active class to the corresponding nav link
+            const activeLink = document.querySelector(`.nav-link[data-page="${pageName}"]`);
+            if (activeLink) {
+                  activeLink.classList.add("active");
+            }
+
+            // Refresh data for the page if needed
+            if (pageName === "repositories") {
+                  fetchRepositoriesList();
+            } else if (pageName === "rules") {
+                  fetchRulesList();
+            } else if (pageName === "sync") {
+                  updateSyncStatus();
+            }
+      }
+}
+
+function syncRepository(repoId) {
+      // Show loading indicator
+      toggleLoadingOverlay(true);
+
+      fetch(`/api/v1/sync/${repoId}`, {
+            method: "POST",
+            headers: {
+                  "Content-Type": "application/json",
+            },
+      })
+            .then((response) => {
+                  toggleLoadingOverlay(false);
+                  if (response.ok) {
+                        showSuccessToast("Repository sync started successfully");
+                        // Update sync status
+                        updateSyncStatus();
+                  } else {
+                        showErrorToast("Error starting repository sync");
+                  }
+            })
+            .catch((error) => {
+                  toggleLoadingOverlay(false);
+                  showErrorToast("Error starting repository sync");
+            });
+}
+
+function deleteRepository(repoId) {
+      if (!confirm("Are you sure you want to delete this repository?")) {
+            return;
+      }
+
+      toggleLoadingOverlay(true);
+
+      fetch(`/api/v1/repositories/${repoId}`, {
+            method: "DELETE",
+            headers: {
+                  "Content-Type": "application/json",
+            },
+      })
+            .then((response) => {
+                  toggleLoadingOverlay(false);
+                  if (response.ok) {
+                        showSuccessToast("Repository deleted successfully");
+                        fetchRepositoriesList();
+                  } else {
+                        showErrorToast("Error deleting repository");
+                  }
+            })
+            .catch((error) => {
+                  toggleLoadingOverlay(false);
+                  showErrorToast("Error deleting repository");
+            });
 }
