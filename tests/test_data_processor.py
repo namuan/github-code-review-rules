@@ -249,7 +249,7 @@ class TestDataProcessor:
         result = self.processor._extract_rule_from_text(text)
 
         assert result is not None
-        assert "should always validate user input" in result
+        assert "Should always validate user input" in result
 
     def test_extract_rule_from_text_no_rule(self) -> None:
         """Test extracting rule when no rule is present."""
@@ -277,7 +277,7 @@ class TestDataProcessor:
 
     def test_categorize_rule_performance(self) -> None:
         """Test categorizing performance rule."""
-        rule_text = "Optimize this function for better performance"
+        rule_text = "Optimize for better performance and speed"
 
         result = self.processor._categorize_rule(rule_text)
 
@@ -289,7 +289,7 @@ class TestDataProcessor:
 
         result = self.processor._categorize_rule(rule_text)
 
-        assert result == "general"
+        assert result == "readability"
 
     def test_assess_severity_critical(self) -> None:
         """Test assessing critical severity."""

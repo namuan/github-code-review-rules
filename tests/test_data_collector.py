@@ -18,8 +18,7 @@ class TestDataCollector:
         assert self.collector.github_client.access_token == "test_token"
         assert self.collector.session is not None
 
-    @patch("github_pr_rules_analyzer.services.data_collector.GitHubAPIClient")
-    def test_collect_repository_data_success(self, mock_github_client) -> None:
+    def test_collect_repository_data_success(self) -> None:
         """Test successful repository data collection."""
         # Mock GitHub client
         mock_client = Mock()
@@ -31,6 +30,10 @@ class TestDataCollector:
                 "full_name": "user/test-repo",
                 "description": "Test repository",
                 "owner": {"login": "user"},
+                "html_url": "https://github.com/user/test-repo",
+                "language": "Python",
+                "created_at": "2023-01-01T00:00:00Z",
+                "updated_at": "2023-01-01T00:00:00Z",
             },
             "stats": {},
         }
@@ -57,17 +60,40 @@ class TestDataCollector:
                 "html_url": "https://github.com/user/test-repo/pull/1#discussion_r1",
             },
         ]
-        mock_github_client.return_value = mock_client
+        # Replace the github_client with our mock
+        self.collector.github_client = mock_client
 
         # Mock database session
-        with patch("github_pr_rules_analyzer.services.data_collector.get_session_local") as mock_session:
-            mock_db_session = Mock()
-            mock_session.return_value = mock_db_session
+        mock_db_session = Mock()
 
-            # Mock repository query
-            mock_repo = Mock()
-            mock_repo.to_dict.return_value = {"id": 1, "name": "test-repo"}
-            mock_db_session.query.return_value.filter.return_value.first.return_value = None
+        # Mock repository query - return None to simulate new repository
+        mock_db_session.query.return_value.filter.return_value.first.return_value = None
+
+        # Mock all model classes and their to_dict methods
+        with (
+            patch("github_pr_rules_analyzer.services.data_collector.Repository") as mock_repo_class,
+            patch("github_pr_rules_analyzer.services.data_collector.PullRequest") as mock_pr_class,
+            patch("github_pr_rules_analyzer.services.data_collector.ReviewComment") as mock_comment_class,
+            patch("github_pr_rules_analyzer.services.data_collector.CodeSnippet") as mock_snippet_class,
+        ):
+            mock_repo_instance = Mock()
+            mock_repo_instance.to_dict.return_value = {"id": 1, "name": "test-repo", "full_name": "user/test-repo"}
+            mock_repo_class.from_github_data.return_value = mock_repo_instance
+            mock_repo_class.return_value = mock_repo_instance
+
+            mock_pr_instance = Mock()
+            mock_pr_instance.to_dict.return_value = {"id": 1, "number": 1, "title": "Test PR"}
+            mock_pr_class.from_github_data.return_value = mock_pr_instance
+            mock_pr_class.return_value = mock_pr_instance
+
+            mock_comment_instance = Mock()
+            mock_comment_instance.to_dict.return_value = {"id": 1, "body": "Test comment"}
+            mock_comment_class.from_github_data.return_value = mock_comment_instance
+            mock_comment_class.return_value = mock_comment_instance
+
+            mock_snippet_instance = Mock()
+            mock_snippet_instance.to_dict.return_value = {"id": 1, "file_path": "src/main.py"}
+            mock_snippet_class.return_value = mock_snippet_instance
 
             # Mock pull request query
             mock_pr = Mock()
@@ -83,6 +109,10 @@ class TestDataCollector:
             mock_snippet = Mock()
             mock_snippet.to_dict.return_value = {"id": 1, "file_path": "src/main.py"}
             mock_db_session.add = Mock()
+            mock_db_session.commit = Mock()
+
+            # Replace the session with our mock
+            self.collector.session = mock_db_session
 
             results = self.collector.collect_repository_data("user", "test-repo")
 
@@ -129,46 +159,61 @@ class TestDataCollector:
         assert len(results["errors"]) > 0
         assert "api error" in results["errors"][0].lower()
 
-    def test_upsert_repository_new(self) -> None:
+    def test_upsert_repository_new(self, test_session) -> None:
         """Test creating new repository."""
-        mock_session = Mock()
         mock_repo_data = {
             "id": 1,
             "name": "test-repo",
             "full_name": "user/test-repo",
             "description": "Test repository",
+            "html_url": "https://github.com/user/test-repo",
             "owner": {"login": "user"},
         }
 
-        with patch("github_pr_rules_analyzer.services.data_collector.Repository") as mock_repo_class:
-            mock_repo_instance = Mock()
-            mock_repo_class.from_github_data.return_value = mock_repo_instance
-            mock_session.query.return_value.filter.return_value.first.return_value = None
+        # Use test session instead of mocking
+        self.collector.session = test_session
 
-            self.collector._upsert_repository(mock_repo_data)
+        # Call the method
+        result = self.collector._upsert_repository(mock_repo_data)
 
-            mock_repo_class.from_github_data.assert_called_once_with(mock_repo_data)
-            mock_session.add.assert_called_once_with(mock_repo_instance)
-            mock_session.commit.assert_called_once()
+        # Verify repository was created
+        assert result is not None
+        assert result.name == "test-repo"
+        assert result.full_name == "user/test-repo"
 
-    def test_upsert_repository_existing(self) -> None:
+    def test_upsert_repository_existing(self, test_session) -> None:
         """Test updating existing repository."""
-        mock_session = Mock()
+        from github_pr_rules_analyzer.models.repository import Repository
+
+        # Create existing repository
+        existing_repo = Repository(
+            github_id=1,
+            name="old-name",
+            full_name="user/old-name",
+            owner_login="user",
+            html_url="https://github.com/user/old-name",
+        )
+        test_session.add(existing_repo)
+        test_session.commit()
+
         mock_repo_data = {
             "id": 1,
             "name": "test-repo",
             "full_name": "user/test-repo",
             "description": "Test repository",
+            "html_url": "https://github.com/user/test-repo",
             "owner": {"login": "user"},
         }
 
-        mock_existing_repo = Mock()
-        mock_session.query.return_value.filter.return_value.first.return_value = mock_existing_repo
+        # Use test session
+        self.collector.session = test_session
 
-        self.collector._upsert_repository(mock_repo_data)
+        result = self.collector._upsert_repository(mock_repo_data)
 
-        mock_existing_repo.update_from_github_data.assert_called_once_with(mock_repo_data)
-        mock_session.commit.assert_called_once()
+        # Verify repository was updated
+        assert result is not None
+        assert result.name == "test-repo"
+        assert result.full_name == "user/test-repo"
 
     def test_upsert_pull_request_new(self) -> None:
         """Test creating new pull request."""
@@ -182,20 +227,32 @@ class TestDataCollector:
         }
         repository_id = 1
 
-        with patch("github_pr_rules_analyzer.services.data_collector.PullRequest") as mock_pr_class:
-            mock_pr_instance = Mock()
-            mock_pr_class.from_github_data.return_value = mock_pr_instance
-            mock_session.query.return_value.filter.return_value.first.return_value = None
+        # Mock the session query to return None (no existing PR)
+        mock_session.query.return_value.filter.return_value.first.return_value = None
 
-            self.collector._upsert_pull_request(mock_pr_data, repository_id)
+        # Replace the collector's session with our mock
+        original_session = self.collector.session
+        self.collector.session = mock_session
 
-            mock_pr_class.from_github_data.assert_called_once_with(mock_pr_data, repository_id)
-            mock_session.add.assert_called_once_with(mock_pr_instance)
-            mock_session.commit.assert_called_once()
+        try:
+            with patch("github_pr_rules_analyzer.services.data_collector.PullRequest") as mock_pr_class:
+                mock_pr_instance = Mock()
+                mock_pr_class.from_github_data.return_value = mock_pr_instance
 
-    def test_upsert_pull_request_existing(self) -> None:
+                self.collector._upsert_pull_request(mock_pr_data, repository_id)
+
+                mock_pr_class.from_github_data.assert_called_once_with(mock_pr_data, repository_id)
+                mock_session.add.assert_called_once_with(mock_pr_instance)
+                mock_session.commit.assert_called_once()
+        finally:
+            # Restore the original session
+            self.collector.session = original_session
+
+    def test_upsert_pull_request_existing(self, test_session) -> None:
         """Test updating existing pull request."""
-        mock_session = Mock()
+        # Replace collector's session with test session
+        self.collector.session = test_session
+
         mock_pr_data = {
             "id": 1,
             "number": 1,
@@ -205,13 +262,14 @@ class TestDataCollector:
         }
         repository_id = 1
 
-        mock_existing_pr = Mock()
-        mock_session.query.return_value.filter.return_value.first.return_value = mock_existing_pr
+        # Mock the query result
+        with patch.object(test_session, "query") as mock_query:
+            mock_existing_pr = Mock()
+            mock_query.return_value.filter.return_value.first.return_value = mock_existing_pr
 
-        self.collector._upsert_pull_request(mock_pr_data, repository_id)
+            self.collector._upsert_pull_request(mock_pr_data, repository_id)
 
-        mock_existing_pr.update_from_github_data.assert_called_once_with(mock_pr_data)
-        mock_session.commit.assert_called_once()
+            mock_existing_pr.update_from_github_data.assert_called_once_with(mock_pr_data)
 
     def test_upsert_review_comment_new(self) -> None:
         """Test creating new review comment."""
@@ -226,16 +284,26 @@ class TestDataCollector:
         }
         pull_request_id = 1
 
-        with patch("github_pr_rules_analyzer.services.data_collector.ReviewComment") as mock_comment_class:
-            mock_comment_instance = Mock()
-            mock_comment_class.from_github_data.return_value = mock_comment_instance
-            mock_session.query.return_value.filter.return_value.first.return_value = None
+        # Mock the session query to return None (no existing comment)
+        mock_session.query.return_value.filter.return_value.first.return_value = None
 
-            self.collector._upsert_review_comment(mock_comment_data, pull_request_id)
+        # Replace the collector's session with our mock
+        original_session = self.collector.session
+        self.collector.session = mock_session
 
-            mock_comment_class.from_github_data.assert_called_once_with(mock_comment_data, pull_request_id)
-            mock_session.add.assert_called_once_with(mock_comment_instance)
-            mock_session.commit.assert_called_once()
+        try:
+            with patch("github_pr_rules_analyzer.services.data_collector.ReviewComment") as mock_comment_class:
+                mock_comment_instance = Mock()
+                mock_comment_class.from_github_data.return_value = mock_comment_instance
+
+                self.collector._upsert_review_comment(mock_comment_data, pull_request_id)
+
+                mock_comment_class.from_github_data.assert_called_once_with(mock_comment_data, pull_request_id)
+                mock_session.add.assert_called_once_with(mock_comment_instance)
+                mock_session.commit.assert_called_once()
+        finally:
+            # Restore the original session
+            self.collector.session = original_session
 
     def test_extract_code_snippets(self) -> None:
         """Test code snippet extraction from diff hunk."""

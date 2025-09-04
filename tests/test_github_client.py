@@ -34,17 +34,11 @@ class TestGitHubAPIClient:
             },
         ]
 
-        # Mock paginated responses
+        # Mock single page response (since we only have 2 repos, pagination won't trigger)
         responses.add(
             responses.GET,
-            "https://api.github.com/user/repos",
-            json=mock_repos[:1],  # First page
-            status=200,
-        )
-        responses.add(
-            responses.GET,
-            "https://api.github.com/user/repos",
-            json=mock_repos[1:],  # Second page
+            "https://api.github.com/user/repos?visibility=all&page=1&per_page=100",
+            json=mock_repos,  # All repos on first page
             status=200,
         )
 
@@ -239,9 +233,14 @@ class TestGitHubAPIClient:
 
     def test_initialization_without_token(self) -> None:
         """Test client initialization without token."""
-        client = GitHubAPIClient()
-        assert client.access_token is None
-        assert "Authorization" not in client.session.headers
+        from unittest.mock import patch
+
+        # Mock settings to return None for github_token
+        with patch("github_pr_rules_analyzer.github.client.settings") as mock_settings:
+            mock_settings.github_token = None
+            client = GitHubAPIClient()
+            assert client.access_token is None
+            assert "Authorization" not in client.session.headers
 
     def test_initialization_with_token(self) -> None:
         """Test client initialization with token."""

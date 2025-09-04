@@ -635,17 +635,17 @@ class DataProcessor:
 
         # Common rule indicators
         rule_patterns = [
-            r"should\s+(?:always|never)\s+\w+",
-            r"avoid\s+\w+",
-            r"use\s+\w+\s+instead",
-            r"prefer\s+\w+\s+over",
-            r"follow\s+\w+\s+convention",
-            r"ensure\s+\w+\s+is\s+\w+",
-            r"make\s+sure\s+to\s+\w+",
-            r"remember\s+to\s+\w+",
-            r"do\s+not\s+\w+",
-            r"always\s+\w+",
-            r"never\s+\w+",
+            r"should\s+(?:always|never)\s+(?:\w+\s*){1,4}\w+",
+            r"avoid\s+(?:\w+\s*){1,3}\w+",
+            r"use\s+(?:\w+\s*){1,3}\w+\s+instead",
+            r"prefer\s+(?:\w+\s*){1,3}\w+\s+over",
+            r"follow\s+(?:\w+\s*){1,3}\w+\s+convention",
+            r"ensure\s+(?:\w+\s*){1,3}\w+\s+is\s+(?:\w+\s*){1,2}\w+",
+            r"make\s+sure\s+to\s+(?:\w+\s*){1,3}\w+",
+            r"remember\s+to\s+(?:\w+\s*){1,3}\w+",
+            r"do\s+not\s+(?:\w+\s*){1,3}\w+",
+            r"always\s+(?:\w+\s*){1,3}\w+",
+            r"never\s+(?:\w+\s*){1,3}\w+",
         ]
 
         import re

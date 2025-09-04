@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from github_pr_rules_analyzer.models import ExtractedRule, PullRequest, Repository, ReviewComment
@@ -37,6 +38,16 @@ def get_services() -> dict[str, Any]:
     }
 
 
+@router.get("/health")
+async def health_check() -> dict[str, str]:
+    """Health check endpoint."""
+    return {
+        "status": "healthy",
+        "service": "GitHub PR Rules Analyzer",
+        "version": "1.0.0",
+    }
+
+
 @router.get("/")
 async def root() -> dict[str, Any]:
     """Root endpoint."""
@@ -47,6 +58,7 @@ async def root() -> dict[str, Any]:
             "repositories": "/repositories",
             "rules": "/rules",
             "dashboard": "/dashboard",
+            "health": "/health",
             "sync": "/sync",
         },
     }
@@ -87,7 +99,7 @@ async def add_repository(
         required_fields = ["owner", "name"]
         for field in required_fields:
             if field not in repo_data:
-                raise HTTPException(status_code=400, detail=f"Missing required field: {field}")
+                raise HTTPException(status_code=422, detail=f"Missing required field: {field}")
 
         # Check if repository already exists
         existing_repo = (
@@ -376,7 +388,7 @@ async def get_rules(
     severity: Annotated[str | None, Query()] = None,
     repository_id: Annotated[int | None, Query()] = None,
     db: Session = Depends(get_db),
-) -> list[dict[str, Any]]:
+) -> dict[str, Any]:
     """Get all rules with filtering."""
     try:
         query = db.query(ExtractedRule)
@@ -415,40 +427,20 @@ async def get_rules(
         raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
-@router.get("/rules/{rule_id}")
-async def get_rule(
-    rule_id: Annotated[int, Path(ge=1)],
-    db: Session = Depends(get_db),
-) -> dict[str, Any]:
-    """Get a specific rule."""
-    try:
-        rule = db.query(ExtractedRule).filter(ExtractedRule.id == rule_id).first()
-        if not rule:
-            raise HTTPException(status_code=404, detail="Rule not found")
-
-        return rule.to_dict()
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.exception("Error getting rule")
-        raise HTTPException(status_code=500, detail="Internal server error") from e
-
-
 @router.get("/rules/search")
 async def search_rules(
     query: Annotated[str, Query(min_length=1)],
     skip: Annotated[int, Query(ge=0)] = 0,
     limit: Annotated[int, Query(ge=1, le=1000)] = 100,
     db: Session = Depends(get_db),
-) -> list[dict[str, Any]]:
+) -> dict[str, Any]:
     """Search rules by text."""
     try:
-        # Simple text search in rule_text and explanation
+        # Simple text search in rule_text
         rules = (
             db.query(ExtractedRule)
             .filter(
-                ExtractedRule.rule_text.ilike(f"%{query}%") | ExtractedRule.explanation.ilike(f"%{query}%"),
+                ExtractedRule.rule_text.ilike(f"%{query}%"),
             )
             .offset(skip)
             .limit(limit)
@@ -458,7 +450,7 @@ async def search_rules(
         total = (
             db.query(ExtractedRule)
             .filter(
-                ExtractedRule.rule_text.ilike(f"%{query}%") | ExtractedRule.explanation.ilike(f"%{query}%"),
+                ExtractedRule.rule_text.ilike(f"%{query}%"),
             )
             .count()
         )
@@ -531,7 +523,7 @@ async def get_rule_statistics(
         total_rules = query.count()
 
         # Get category distribution
-        category_query = db.query(ExtractedRule.rule_category, db.func.count(ExtractedRule.id))
+        category_query = db.query(ExtractedRule.rule_category, func.count(ExtractedRule.id))
         if repository_id:
             category_query = (
                 category_query.join(ReviewComment).join(PullRequest).filter(PullRequest.repository_id == repository_id)
@@ -543,7 +535,7 @@ async def get_rule_statistics(
         category_stats = dict(category_query.group_by(ExtractedRule.rule_category).all())
 
         # Get severity distribution
-        severity_query = db.query(ExtractedRule.rule_severity, db.func.count(ExtractedRule.id))
+        severity_query = db.query(ExtractedRule.rule_severity, func.count(ExtractedRule.id))
         if repository_id:
             severity_query = (
                 severity_query.join(ReviewComment).join(PullRequest).filter(PullRequest.repository_id == repository_id)
@@ -555,7 +547,7 @@ async def get_rule_statistics(
         severity_stats = dict(severity_query.group_by(ExtractedRule.rule_severity).all())
 
         # Get average confidence
-        avg_confidence = db.query(db.func.avg(ExtractedRule.confidence_score)).scalar() or 0
+        avg_confidence = db.query(func.avg(ExtractedRule.confidence_score)).scalar() or 0
 
         return {
             "total_rules": total_rules,
@@ -571,6 +563,26 @@ async def get_rule_statistics(
 
     except Exception as e:
         logger.exception("Error getting statistics")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
+
+
+@router.get("/rules/{rule_id}")
+async def get_rule(
+    rule_id: Annotated[int, Path(ge=1)],
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """Get a specific rule."""
+    try:
+        rule = db.query(ExtractedRule).filter(ExtractedRule.id == rule_id).first()
+        if not rule:
+            raise HTTPException(status_code=404, detail="Rule not found")
+
+        return rule.to_dict()
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("Error getting rule")
         raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
@@ -610,11 +622,11 @@ async def get_dashboard_data(
         top_categories = (
             db.query(
                 ExtractedRule.rule_category,
-                db.func.count(ExtractedRule.id),
+                func.count(ExtractedRule.id),
             )
             .group_by(ExtractedRule.rule_category)
             .order_by(
-                db.func.count(ExtractedRule.id).desc(),
+                func.count(ExtractedRule.id).desc(),
             )
             .limit(5)
             .all()
@@ -703,7 +715,7 @@ async def get_repository_rules(
     category: Annotated[str | None, Query()] = None,
     severity: Annotated[str | None, Query()] = None,
     db: Session = Depends(get_db),
-) -> list[dict[str, Any]]:
+) -> dict[str, Any]:
     """Get rules for a specific repository."""
     try:
         # Check if repository exists
@@ -814,7 +826,7 @@ async def get_repository_statistics(
         category_stats = (
             db.query(
                 ExtractedRule.rule_category,
-                db.func.count(ExtractedRule.id),
+                func.count(ExtractedRule.id),
             )
             .join(
                 ReviewComment,

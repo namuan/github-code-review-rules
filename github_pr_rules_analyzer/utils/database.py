@@ -89,6 +89,17 @@ def get_db() -> Generator[Session, None, None]:
 
 def create_tables() -> None:
     """Create all database tables."""
+    # Import all models to ensure they are registered with Base metadata
+    from github_pr_rules_analyzer.models import (  # noqa: F401
+        CodeSnippet,
+        CommentThread,
+        ExtractedRule,
+        PullRequest,
+        Repository,
+        ReviewComment,
+        RuleStatistics,
+    )
+
     engine = get_engine()
     Base.metadata.create_all(bind=engine)
 
@@ -131,9 +142,9 @@ def get_database_info() -> dict:
     info = {
         "database_url": database_url,
         "driver": engine.driver,
-        "pool_size": str(engine.pool.size()),
-        "pool_timeout": str(engine.pool.timeout),
-        "pool_recycle": str(engine.pool.recycle),
+        "pool_size": str(getattr(engine.pool, "size", "N/A")),
+        "pool_timeout": str(getattr(engine.pool, "timeout", "N/A")),
+        "pool_recycle": str(getattr(engine.pool, "recycle", "N/A")),
     }
 
     if database_url.startswith("sqlite"):
