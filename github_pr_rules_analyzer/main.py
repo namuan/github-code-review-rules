@@ -117,7 +117,7 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> HTMLRe
 
 
 @app.exception_handler(404)
-async def not_found_handler(request: Request, exc: Exception) -> HTMLResponse | JSONResponse:
+async def not_found_handler(request: Request, _exc: Exception) -> HTMLResponse | JSONResponse:
     """404 error handler for non-HTTP exceptions."""
     # Return JSON for API routes, HTML for web routes
     if request.url.path.startswith("/api/"):

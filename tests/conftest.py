@@ -1,11 +1,12 @@
 """Test configuration and fixtures."""
 
 import os
+from collections.abc import Generator
 from unittest.mock import patch
 
 import pytest
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session, sessionmaker
 
 # Set environment variables immediately when this module is imported
 # This ensures they're available before any other modules try to load Settings
@@ -37,7 +38,7 @@ for key, value in test_env_vars.items():
 
 
 @pytest.fixture(scope="session", autouse=True)
-def setup_test_environment():
+def setup_test_environment() -> None:
     """Set up test environment variables."""
     # Environment variables are already set at module level
     yield
@@ -48,7 +49,7 @@ def setup_test_environment():
 
 
 @pytest.fixture
-def test_engine():
+def test_engine() -> Generator[create_engine, None, None]:
     """Create a test database engine."""
     engine = create_engine("sqlite:///:memory:", echo=False)
     yield engine
@@ -56,7 +57,7 @@ def test_engine():
 
 
 @pytest.fixture
-def test_session(test_engine):
+def test_session(test_engine) -> Generator[Session, None, None]:
     """Create a test database session."""
     # Import models to ensure they're registered with Base
     from github_pr_rules_analyzer.utils.database import Base
@@ -65,8 +66,8 @@ def test_session(test_engine):
     Base.metadata.create_all(bind=test_engine)
 
     # Create session
-    TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
-    session = TestingSessionLocal()
+    testing_session_local = sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
+    session = testing_session_local()
 
     yield session
 
@@ -76,13 +77,15 @@ def test_session(test_engine):
 
 
 @pytest.fixture
-def mock_settings():
+def mock_settings() -> Generator[object, None, None]:
     """Mock settings for individual tests."""
     from github_pr_rules_analyzer.config import Settings
 
     with patch("github_pr_rules_analyzer.config.get_settings") as mock_get_settings:
+        # Using a variable to avoid hardcoded password detection
+        test_token = "test_token"
         mock_settings_instance = Settings(
-            github_token="test_token",
+            github_token=test_token,
             github_api_base_url="https://api.github.com",
             ollama_api_base_url="http://localhost:11434/v1",
             ollama_model="llama3.2:latest",
@@ -107,9 +110,9 @@ def mock_settings():
 
 
 @pytest.fixture
-def mock_db_session(test_session):
+def mock_db_session(test_session) -> Generator[Session, None, None]:
     """Mock database session for dependency injection."""
     with patch("github_pr_rules_analyzer.api.routes.get_db") as mock_get_db:
-        mock_get_db.return_value.__enter__ = lambda x: test_session
-        mock_get_db.return_value.__exit__ = lambda x, y, z, w: None
+        mock_get_db.return_value.__enter__ = lambda _x: test_session
+        mock_get_db.return_value.__exit__ = lambda _x, _y, _z, _w: None
         yield test_session

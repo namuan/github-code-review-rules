@@ -38,16 +38,6 @@ def get_services() -> dict[str, Any]:
     }
 
 
-@router.get("/health")
-async def health_check() -> dict[str, str]:
-    """Health check endpoint."""
-    return {
-        "status": "healthy",
-        "service": "GitHub PR Rules Analyzer",
-        "version": "1.0.0",
-    }
-
-
 @router.get("/")
 async def root() -> dict[str, Any]:
     """Root endpoint."""

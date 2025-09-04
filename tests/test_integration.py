@@ -127,7 +127,7 @@ class TestIntegration:
             "errors": [],
         }
 
-        def mock_get_services():
+        def mock_get_services() -> dict[str, Mock]:
             return {
                 "data_collector": mock_data_collector,
                 "data_processor": mock_data_processor,
@@ -198,7 +198,7 @@ class TestIntegration:
             },
         ]
 
-        def mock_get_services_extract():
+        def mock_get_services_extract() -> dict[str, Mock]:
             return {
                 "data_collector": Mock(),
                 "data_processor": Mock(),
